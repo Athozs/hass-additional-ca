@@ -1,0 +1,13 @@
+{
+  "domain": "additional_ca",
+  "name": "Additional CA",
+  "codeowners": [
+    "@Athozs"
+  ],
+  "dependencies": [],
+  "documentation": "https://www.github.com/Athozs/hass-additional-ca",
+  "iot_class": "local_push",
+  "issue_tracker" : "https://github.com/Athozs/hass-additional-ca/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

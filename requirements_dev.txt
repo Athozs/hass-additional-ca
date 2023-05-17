@@ -1,0 +1,5 @@
+homeassistant==2023.5.3
+colorlog
+isort[colors]
+black
+pylint

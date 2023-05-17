@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+
+  hass_dev:
+    image: homeassistant/home-assistant:2023.5.3
+    container_name: hass_dev
+    # network_mode: host
+    ports:
+      - 8000:8123
+    environment:
+      - TZ=Europe/Paris
+      - PYTHONUNBUFFERED=1
+      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+    volumes:
+      - ./config:/config
