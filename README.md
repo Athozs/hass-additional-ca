@@ -8,7 +8,7 @@
 Add custom CA (Certificate Authority) to Home Assistant.
 
 - [Additional CA for Home Assistant](#additional-ca-for-home-assistant)
-  - [1. (SOON) INSTALL WITH HACS](#1-soon-install-with-hacs)
+  - [1. INSTALL WITH HACS](#1-install-with-hacs)
   - [2. INSTALL WITHOUT HACS](#2-install-without-hacs)
     - [2.1. Docker](#21-docker)
     - [2.2. HAOS - Home Assistant Operating System](#22-haos---home-assistant-operating-system)
@@ -22,19 +22,32 @@ Add custom CA (Certificate Authority) to Home Assistant.
   - [9. KNOWN ISSUES](#9-known-issues)
 
 
-## 1. (SOON) INSTALL WITH HACS
-
-⚠️ _Additional CA_ is not available yet in HACS index, it is currently under validation to be indexed by HACS.
+## 1. INSTALL WITH HACS
 
 <!--
 * [Install HACS](https://hacs.xyz/docs/setup/prerequisites) if not already done.
-* Go to your Home Assistant,
+* Then, go to your Home Assistant,
     * -> HACS
     * -> Integrations
     * -> Click Explore and Download repositories
     * -> Search for "Additional CA"
     * -> From the _Additional CA_ presentation page: click Download
 -->
+
+For now, install _Additional CA_ by adding this Github repository to HACS custom repositories:
+
+* [Install HACS](https://hacs.xyz/docs/setup/prerequisites) if not already done.
+* Then, go to your Home Assistant,
+    * -> HACS
+    * -> Integrations
+    * -> Click the Three-dots button in top-right corner
+    * -> Custom repositories
+    * -> Fill in
+      - Repository: https://github.com/Athozs/hass-additional-ca.git
+      - Category: Integration
+    * -> Click Add
+
+![](img/hacs-custom-repo.png) ![](img/hacs-repo-box.png)
 
 
 ## 2. INSTALL WITHOUT HACS
@@ -71,7 +84,7 @@ cp -r additional_ca config/custom_components/
 
   - Click button to download ZIP of _Additional CA_ [![Release version](https://img.shields.io/github/v/release/Athozs/hass-additional-ca?color=brightgreen&label=Download&style=for-the-badge)](https://github.com/Athozs/hass-additional-ca/releases/latest/download/additional_ca.zip "Download")
   - Unzip archive
-  - Move `additional_ca` (under custom_components/) into `config/custom_components/` directory
+  - Move folder `additional_ca` into `config/custom_components/` directory
   - Installation done, now see Configuration section (README.md)
 
 
@@ -86,15 +99,16 @@ cp -r additional_ca config/custom_components/
 * Connect to the SSH add-on
 * Download the latest release of _Additional CA_ from Github (.zip)
 
-`curl -L -O https://github.com/Athozs/hass-additional-ca/archive/refs/heads/main.zip`
+`wget https://github.com/Athozs/hass-additional-ca/releases/latest/download/additional_ca.zip`
 
 * Unzip archive
 
-`unzip main.zip`
+`unzip additional_ca.zip`
 
-* Move `additional_ca` (under custom_components/) into `config/custom_components/` directory
+* Move or copy folder `additional_ca` into `config/custom_components/` directory
 
-`mv custom_components/additional_ca config/custom_components/`
+`cp -r additional_ca config/custom_components/`
+
 
 ### 2.3. Core
 
