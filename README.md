@@ -62,7 +62,7 @@ cd /path/to/home-assistant
 # git clone Addition CA integration
 git clone https://github.com/Athozs/hass-additional-ca.git
 # copy additional_ca integration to Home Assistant custom components
-cp -r hass-additional-ca/custom_components/additional_ca config/custom_components/
+cp -r hass-additional-ca/custom_components/additional_ca config/custom_components
 # Installation done, now see Configuration section (README.md)
 ```
 
@@ -76,7 +76,7 @@ wget https://github.com/Athozs/hass-additional-ca/releases/latest/download/addit
 # unzip archive
 unzip additional_ca.zip
 # copy additional_ca integration to Home Assistant custom components
-cp -r additional_ca config/custom_components/
+cp -r additional_ca config/custom_components
 # Installation done, now see Configuration section (README.md)
 ```
 
@@ -107,7 +107,7 @@ cp -r additional_ca config/custom_components/
 
 * Move or copy folder `additional_ca` into `config/custom_components/` directory
 
-`cp -r additional_ca config/custom_components/`
+`cp -r additional_ca config/custom_components`
 
 
 ### 2.3. Core
