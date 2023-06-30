@@ -90,8 +90,6 @@ cp -r additional_ca config/custom_components
 
 ### 2.2. HAOS - Home Assistant Operating System
 
-  > ⚠️ I did not test installation on HAOS
-
 * Go to the [Add-on store](https://my.home-assistant.io/redirect/supervisor_store/)
 * Install one of the SSH add-ons (you need to enable advanced mode in your user profile to see them)
 * Configure the SSH add-on you chose by following the documentation for it
