@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import os
 
+import certifi
+
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
@@ -38,6 +40,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         await update_ca_certificates(hass, config, store)
     except:
         _LOGGER.warning("Additional CA setup has been interrupted.")
+        raise
+
+    try:
+        await update_certifi_certificates(hass, config)
+    except:
+        _LOGGER.warning("Additional CA Certifi setup has been interrupted.")
         raise
 
     return True
@@ -99,6 +107,60 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
                 new_additional_ca_data[ca_idname] = ca_uname
                 await store.save_storage_data(new_additional_ca_data)
                 _LOGGER.info(f"{ca_idname} ({ca_filepath}) -> loaded.")
+
+        elif os.path.isdir(additional_ca_fullpath):
+            _LOGGER.warning(f"{additional_ca_fullpath} is a not a CA file.")
+
+    return True
+
+
+async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Update CA certificates at python certifi level."""
+
+    conf = config.get(DOMAIN)
+
+    config_path = hass.config.path(CONFIG_SUBDIR)
+
+    try:
+        os.path.isdir(config_path)
+    except:
+        _LOGGER.warning(f"Folder {CONFIG_SUBDIR} not found in configuration folder.")
+        raise
+
+    cafile_path = certifi.where()
+
+    try:
+        with open(cafile_path, 'r') as f:
+            cacerts = f.read()
+    except:
+        _LOGGER.warning(f"Unable to read {cafile_path}")
+        raise
+
+    for ca_idname, ca_filepath in conf.items():
+        additional_ca_fullpath = os.path.join(config_path, ca_filepath)
+
+        if not os.path.exists(additional_ca_fullpath):
+            _LOGGER.warning(f"{ca_idname}: {ca_filepath} not found.")
+            continue
+
+        if os.path.isfile(additional_ca_fullpath):
+            with open(additional_ca_fullpath, 'r') as f:
+                cert = f.read()
+
+            # Check if the private cert is present in CA bundle
+            # Note any Byte changes in source file will trigger (no harm) re-add dup
+
+            if cert not in cacerts:
+
+                # original CA bundle can be fetched from upstream:
+                # https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
+
+                with open(cafile_path, 'a') as cafile:
+                    cafile.write('\n')
+                    cafile.write(f'# {DOMAIN}: {ca_idname}\n')
+                    cafile.write(cert)
+
+                _LOGGER.info(f"{ca_idname} ({ca_filepath}) -> python certifi loaded.")
 
         elif os.path.isdir(additional_ca_fullpath):
             _LOGGER.warning(f"{additional_ca_fullpath} is a not a CA file.")
