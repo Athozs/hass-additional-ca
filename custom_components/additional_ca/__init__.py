@@ -6,10 +6,10 @@ import logging
 import os
 
 import certifi
-
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.system_info import async_get_system_info
 from homeassistant.helpers.typing import ConfigType
 
 from .const import CONFIG_SUBDIR, DOMAIN
@@ -30,6 +30,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Additional CA component."""
 
     config_path = hass.config.path(CONFIG_SUBDIR)
+    ha_sys_info = await async_get_system_info(hass)
 
     if not os.path.isdir(config_path):
         _LOGGER.warning(f"Folder {CONFIG_SUBDIR} not found in configuration folder.")
@@ -42,11 +43,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         _LOGGER.warning("Additional CA setup has been interrupted.")
         raise
 
-    try:
-        await update_certifi_certificates(hass, config)
-    except:
-        _LOGGER.warning("Additional CA Certifi setup has been interrupted.")
-        raise
+    ha_type = ha_sys_info["installation_type"]
+
+    if "Operating System" in ha_type or "Supervised" in ha_type:
+        _LOGGER.info(f"Installation type = {ha_type}")
+        try:
+            await update_certifi_certificates(hass, config)
+        except:
+            _LOGGER.warning("Additional CA (Certifi) setup has been interrupted.")
+            raise
 
     return True
 
@@ -109,13 +114,13 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
                 _LOGGER.info(f"{ca_idname} ({ca_filepath}) -> loaded.")
 
         elif os.path.isdir(additional_ca_fullpath):
-            _LOGGER.warning(f"{additional_ca_fullpath} is a not a CA file.")
+            _LOGGER.warning(f"{additional_ca_fullpath} is not a CA file.")
 
     return True
 
 
 async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Update CA certificates at python certifi level."""
+    """Update CA certificates in Certifi bundle."""
 
     conf = config.get(DOMAIN)
 
@@ -128,12 +133,13 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
         raise
 
     cafile_path = certifi.where()
+    _LOGGER.debug(f"Certifi CA bundle path: {cafile_path}")
 
     try:
-        with open(cafile_path, 'r') as f:
+        with open(cafile_path, "r") as f:
             cacerts = f.read()
     except:
-        _LOGGER.warning(f"Unable to read {cafile_path}")
+        _LOGGER.warning(f"Unable to read {cafile_path}.")
         raise
 
     for ca_idname, ca_filepath in conf.items():
@@ -144,25 +150,25 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
             continue
 
         if os.path.isfile(additional_ca_fullpath):
-            with open(additional_ca_fullpath, 'r') as f:
+            with open(additional_ca_fullpath, "r") as f:
                 cert = f.read()
 
             # Check if the private cert is present in CA bundle
-            # Note any Byte changes in source file will trigger (no harm) re-add dup
+            # Note: any Byte changes in source file will trigger a warning 're-add dup' (no harm)
 
             if cert not in cacerts:
 
                 # original CA bundle can be fetched from upstream:
                 # https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
 
-                with open(cafile_path, 'a') as cafile:
-                    cafile.write('\n')
-                    cafile.write(f'# {DOMAIN}: {ca_idname}\n')
+                with open(cafile_path, "a") as cafile:
+                    cafile.write("\n")
+                    cafile.write(f"# {DOMAIN}: {ca_idname}\n")
                     cafile.write(cert)
 
-                _LOGGER.info(f"{ca_idname} ({ca_filepath}) -> python certifi loaded.")
+                _LOGGER.info(f"{ca_idname} ({ca_filepath}) -> loaded into Certifi CA bundle.")
 
         elif os.path.isdir(additional_ca_fullpath):
-            _LOGGER.warning(f"{additional_ca_fullpath} is a not a CA file.")
+            _LOGGER.warning(f"{additional_ca_fullpath} is not a CA file.")
 
     return True

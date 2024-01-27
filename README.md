@@ -266,16 +266,18 @@ It loads private CAs and self-signed certs only at Home Assistant startup.
 
 It copies private CAs and self-signed certs to `/usr/local/share/ca-certificates/` directory inside container and uses `update-ca-certificates` command line to update TLS/SSL trust store.
 
+There is a check for Home Assistant installation type: if HAOS or Supervised installation is detected, then it will add private CA in Certifi CA bundle if not yet added (thanks to @nabbi for the contribution).
+
 For now, _Additional CA_ won't be visible in Home Assistant integrations dashboard, there is not UI component for _Additional CA_ integration. This may be possible in future release.
 
 
 ## 5. SET `REQUESTS_CA_BUNDLE` ENVIRONMENT VARIABLE
 
-You may need to set environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt`
+Only for Docker installation type and Core installation type, you may need to set environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt`
 
 This is optional, it depends on your installed integrations.
 
- > 📝 __Note__: At time of writing, I could not find on the internet a reliable way to set permanently an environment variable in Home Assistant OS. So I coded another integration as a hack: https://github.com/Athozs/hass-environment-variable
+ > 📝 __Note__: At time of writing, I could not find on the internet a reliable way to set permanently an environment variable in Home Assistant OS.
 
 
 ### 5.1. Integrations based on _Requests_
@@ -355,6 +357,8 @@ Some tips to clean your system CA in case of failure:
 
 - Manually remove private CA files from `/usr/local/share/ca-certificates/` directory inside HA container.
 - Then update manually system CA running command `update-ca-certificates` inside HA container.
+
+In case of Home Assistant OS (HAOS) or Supervised installation type, you could reset Certifi CA bundle by downloading original bundle from https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem and replace it (run command line `python -m certifi` to get Certifi bundle path).
 
 
 ## 9. KNOWN ISSUES
