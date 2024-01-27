@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Python (version 3.10 currently)
+- Python (version 3.11 currently)
 - Pip
 - Docker and Docker Compose
 - rsync
@@ -19,9 +19,8 @@ pip install -r requirements_dev.txt
 ```
 
 
-## Test
+## Run
 
 ```shell
-mkdir -p config
 bash scripts/run-compose.sh
 ```

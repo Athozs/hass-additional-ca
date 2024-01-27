@@ -16,20 +16,6 @@
                 "showReuseMessage": true,
                 "clear": false
             }
-        },
-        {
-            "label": "Recreate Home Assistant with Compose",
-            "type": "shell",
-            "command": "bash scripts/recreate-compose.sh",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "never",
-                "focus": true,
-                "panel": "dedicated",
-                "showReuseMessage": true,
-                "clear": false
-            }
         }
     ]
 }
