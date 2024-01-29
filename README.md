@@ -47,6 +47,9 @@ __Table of contents__
   - [6. HOW TO REMOVE A PRIVATE CA ?](#6-how-to-remove-a-private-ca-)
   - [7. UNINSTALL](#7-uninstall)
   - [8. TROUBLESHOOTING](#8-troubleshooting)
+    - [8.1. Docker](#81-docker)
+    - [8.2. HAOS - Home Assistant Operating System](#82-haos---home-assistant-operating-system)
+    - [8.3. Tips](#83-tips)
   - [9. KNOWN ISSUES](#9-known-issues)
 
 
@@ -189,6 +192,8 @@ Directories structure example:
 │   ├── additional_ca/
 │   │   ├── my_ca.crt
 │   │   ├── selfcert.crt
+│   │   └── my_folder/
+│   │       └── selfcert_2.pem
 │   │   └── some-super-ca/
 |   |       ├── ca2.pem
 │   │       └── ca3.crt
@@ -225,10 +230,11 @@ Example:
 ---
 default_config:
 additional_ca:
-  my_awesome_ca: my_ca.crt                       # a cert file
-  a_super_ca: some-super-ca/ca2.pem              # a folder + a cert file
-  again_another_super_ca: some-super-ca/ca3.crt  # a folder + a cert file
-  my_self_signed_cert: selfcert.crt              # a self-signed certificate
+  my_awesome_ca: my_ca.crt                         # a cert file
+  a_super_ca: some-super-ca/ca2.pem                # relative path + a cert file
+  again_another_super_ca: some-super-ca/ca3.crt    # relative path + a cert file
+  my_self_signed_cert: selfcert.crt                # a self-signed certificate
+  my_self_signed_cert_2: my_folder/selfcert_2.pem  # relative path + a self-signed certificate
 # ...
 ```
 
@@ -262,7 +268,7 @@ services:
 
 When enabled, _Additional CA_ integration looks for private Certificates Authorities files (CAs) and self-signed certs in `config/additional_ca` directory.
 
-It loads private CAs and self-signed certs only at Home Assistant startup.
+_Additional CA_ loads private CAs and self-signed certs only at Home Assistant startup. After upgrading Home Assistant to a new version, you need to restart Home Assistant to load again your certificates.
 
 It copies private CAs and self-signed certs to `/usr/local/share/ca-certificates/` directory inside container and uses `update-ca-certificates` command line to update TLS/SSL trust store.
 
@@ -277,7 +283,7 @@ Only for Docker installation type and Core installation type, you may need to se
 
 This is optional, it depends on your installed integrations.
 
- > 📝 __Note__: At time of writing, I could not find on the internet a reliable way to set permanently an environment variable in Home Assistant OS.
+ > 📝 __Note__: At time of writing, I could not find on the internet a reliable way to set permanently an environment variable in Home Assistant OS. As a workaround, _Additional CA_ integration adds your private CA into Certifi CA bundle if not yet added.
 
 
 ### 5.1. Integrations based on _Requests_
@@ -323,6 +329,14 @@ Optionally remove them from `config/additional_ca/` directory.
 
 1. Delete _Additional CA_ from custom components:
 
+Uninstall from HACS, go to your Home Assistant,
+* -> HACS
+* -> Integrations
+* -> Additional CA
+* -> From the three-dots menu: click _Remove_
+
+Or uninstall manually:
+
 ```shell
 rm -r config/custom_components/additional_ca
 ```
@@ -344,7 +358,9 @@ default_config:
 rm -r config/additional_ca
 ```
 
-4. Recreate container:
+4. Restart Home Assistant.
+
+If using Docker Compose, recreate container:
 
 ```shell
 docker compose up -d --force-recreate
@@ -353,12 +369,49 @@ docker compose up -d --force-recreate
 
 ## 8. TROUBLESHOOTING
 
-Some tips to clean your system CA in case of failure:
+Some tips to clean your system CA in case of failure.
+
+
+### 8.1. Docker
+
+If running Home Assistant with Docker:
+
+- Stop and remove HA container, it will remove all changes made inside container,
+
+or
 
 - Manually remove private CA files from `/usr/local/share/ca-certificates/` directory inside HA container.
 - Then update manually system CA running command `update-ca-certificates` inside HA container.
 
-In case of Home Assistant OS (HAOS) or Supervised installation type, you could reset Certifi CA bundle by downloading original bundle from https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem and replace it (run command line `python -m certifi` to get Certifi bundle path).
+
+### 8.2. HAOS - Home Assistant Operating System
+
+If running Home Assistant from HAOS or Supervised installation type, you could reset Certifi CA bundle, two ways possible:
+
+- Downloading original bundle from https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem and replace it at Certifi bundle path (run command line `docker exec -ti homeassistant python -m certifi` to get Certifi bundle path).
+- Or stop and remove `homeassistant` Docker container inside HAOS and restart HAOS.
+
+```shell
+docker stop homeassistant
+docker rm homeassistant
+reboot
+```
+
+
+### 8.3. Tips
+
+To enable INFO logs level, add the following to your `configuration.yaml`:
+
+```yaml
+logger:
+  default: info
+```
+
+To check your certificate validity, if using x509 certs, run:
+
+```shell
+openssl x509 -in config/additional_ca/my_ca.crt -text -noout
+```
 
 
 ## 9. KNOWN ISSUES
