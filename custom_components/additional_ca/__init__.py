@@ -45,7 +45,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     ha_type = ha_sys_info["installation_type"]
 
-    if "Operating System" in ha_type or "Supervised" in ha_type:
+    if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type:
         _LOGGER.info(f"Installation type = {ha_type}")
         try:
             await update_certifi_certificates(hass, config)
