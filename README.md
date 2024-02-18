@@ -27,6 +27,44 @@ You want to import Certificate file into Home Assistant host/container trust sto
 
 ![](img/hass-additional-ca.png)
 
+
+## 📘 TL;DR
+
+* [Install HACS](https://hacs.xyz/docs/setup/prerequisites)
+* Install _Additional CA_ integration via HACS or manually without HACS, full docs here-under
+* Copy private CA to config folder:
+
+```shell
+mkdir -p config/additional_ca
+cp my_ca.crt config/additional_ca/
+```
+
+```yaml
+# configuration.yaml
+---
+default_config:
+additional_ca:
+  my_ca_1: my_ca.crt
+  # my_ca_2: ca_foo.pem
+# ...
+```
+
+* Export environment variable if running Home Assistant with Docker (no need in case of Home Assistant OS):
+
+```yaml
+# compose.yml
+version: '3'
+services:
+  homeassistant:
+    # ...
+    environment:
+      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+```
+
+* Restart Home Assistant
+* Done!
+
+
 ___
 
 __Table of contents__
@@ -34,6 +72,7 @@ __Table of contents__
 - [Additional CA for Home Assistant](#additional-ca-for-home-assistant)
   - [📘 What to understand meaning private Certificate Authority (CA) ?](#-what-to-understand-meaning-private-certificate-authority-ca-)
   - [📘 What are the use-cases with this integration ?](#-what-are-the-use-cases-with-this-integration-)
+  - [📘 TL;DR](#-tldr)
   - [1. INSTALL WITH HACS](#1-install-with-hacs)
   - [2. INSTALL WITHOUT HACS](#2-install-without-hacs)
     - [2.1. Docker](#21-docker)
