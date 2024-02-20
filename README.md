@@ -4,26 +4,30 @@
 [![Release version](https://img.shields.io/github/v/release/Athozs/hass-additional-ca?color=brightgreen&label=Download&style=for-the-badge)](https://github.com/Athozs/hass-additional-ca/releases/latest/download/additional_ca.zip "Download")
 -->
 
+<p align="center">
+  <img src="img/hass-additional-ca-icon.png" />
+</p>
+
 # Additional CA for Home Assistant
 
-_Additional CA_ integration for Home Assistant loads automatically private Certificate Authority or self-signed certificate into Home Assistant in order to access 3rd-party service with TLS/SSL, even after Home Assistant Docker container is recreated/upgraded.
+_Additional CA_ integration for Home Assistant loads automatically private Certificate Authority or self-signed certificate into Home Assistant in order to access 3rd-party service with TLS/SSL, even after Home Assistant OS / Docker is upgraded.
 
 
 ## 📘 What to understand meaning private Certificate Authority (CA) ?
 
-* In case you manage your own CA, or you trust a CA, it gives you a kind of `ca.crt` file (or equivalent), that could be named shortly a personal/own/private/custom CA.
+* In case you manage your own CA, or you trust a CA, it gives you a kind of `ca.crt` file (or equivalent), that could be named shortly a personal / own / private / custom CA.
 
-* In case you generate a self-signed TLS/SSL certificate, it gives you a `.crt` file (or equivalent), that could be an equivalent of a personal/own/private/custom trusted CA.
+* In case you generate a self-signed TLS/SSL certificate, it gives you a `.crt` file (or equivalent), that could be an equivalent of a personal / own / private / custom trusted CA.
 
 📒 This documentation uses 'private CA' or 'self-signed cert' alternatively for the same purpose.
 
 
 ## 📘 What are the use-cases with this integration ?
 
-You want to import Certificate file into Home Assistant host/container trust store, in order to access 3rd-party service with TLS/SSL:
+You want to import Certificate file into Home Assistant OS / Docker container trust store, in order to access 3rd-party service with TLS/SSL:
 
 * Some of your installed integrations in Home Assistant need to access devices or third-party services with TLS/SSL (HTTPS, etc), and you got a ca.crt (or equivalent) from the service provider, you can load it with _Additional CA_ integration.
-* You generated a self-signed TLS/SSL certificate for your own service (personal HTTPS Web server, etc) that you want to be trusted by Home Assistant, you can load it with _Additional CA_ integration.
+* You generated a self-signed TLS/SSL certificate for your own service (personal HTTPS Web server, SMTP, LDAP, etc) that you want to be trusted by Home Assistant, you can load it with _Additional CA_ integration.
 
 ![](img/hass-additional-ca.png)
 
@@ -320,9 +324,11 @@ It copies private CAs and self-signed certs to `/usr/local/share/ca-certificates
 
 ### 4.2. HAOS - Home Assistant Operating System
 
-If you're running Home Assistant from HAOS or Supervised installation, _Additional CA_ integration works the same way as with Docker, but you can't export environment variable permanently in HAOS, so there is a workaround: _Additional CA_ integration will also add private CA in Certifi CA bundle `/usr/local/lib/python3.xx/site-packages/certifi/cacert.pem` if not yet present (thanks to @nabbi for the contribution).
+HAOS is actually a Linux OS running a `homeassistant` Docker container inside.
 
-Thus, in HAOS, your private CA or self-signed cert will appear both in container CA trust store (because HAOS actually runs a container inside) and Certifi CA bundle.
+If you're running Home Assistant from HAOS or Supervised installation, _Additional CA_ integration works the same way as with Docker, but you can't export environment variable permanently in HAOS, so there is a workaround: _Additional CA_ integration will also add private CA in Certifi CA bundle `/usr/local/lib/python3.xx/site-packages/certifi/cacert.pem` inside `homeassistant` container if not yet present (thanks to @nabbi for the contribution).
+
+Thus, for HAOS, your private CA or self-signed cert will appear in container CA trust store and in Certifi CA bundle (both inside `homeassistant` container).
 
 After upgrading Home Assistant to a new version, you need to reboot Home Assistant to load again your certificates.
 
@@ -426,10 +432,9 @@ If running Home Assistant from HAOS or Supervised installation type, you could r
 
 Either
 
-- (Preferable) Stop and remove `homeassistant` Docker container inside HAOS and reboot HAOS.
+- (Preferable) Stop and remove `homeassistant` Docker container inside HAOS and reboot HAOS. From Home Assistant SSH prompt, run:
 
 ```shell
-# from Home Assistant SSH prompt, run:
 docker stop homeassistant
 docker rm homeassistant
 reboot
