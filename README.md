@@ -377,7 +377,9 @@ additional_ca:
 
 Note: `additional_ca` domain key need to be enabled in `configuration.yaml` to remove CA files on next restart of Home Assistant.
 
-Optionally remove them from `config/additional_ca/` directory.
+Optionally remove your private CA file from `config/additional_ca/` directory.
+
+Then, restart Home Assistant.
 
 
 ## 7. UNINSTALL

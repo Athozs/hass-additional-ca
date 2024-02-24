@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
+import shutil
 
 import certifi
 import homeassistant.helpers.config_validation as cv
@@ -12,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.system_info import async_get_system_info
 from homeassistant.helpers.typing import ConfigType
 
-from .const import CONFIG_SUBDIR, DOMAIN
+from .const import CONFIG_SUBDIR, DOMAIN, CERTIFI_BACKUP_PATH
 from .storage import AdditionalCAStore
 from .utils import (
     copy_ca_to_system,
@@ -74,7 +76,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
     if additional_ca_data is None:
         additional_ca_data = {}
 
-    # clean all current additional CA
+    # clean user's current additional CA
     try:
         remove_all_additional_ca(additional_ca_data)
     except:
@@ -86,7 +88,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
     except:
         raise
 
-    _LOGGER.info("Ready.")
+    _LOGGER.info("System CA ready.")
 
     # copy custom additional CA to system
     new_additional_ca_data = {}
@@ -132,14 +134,27 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
         _LOGGER.warning(f"Folder {CONFIG_SUBDIR} not found in configuration folder.")
         raise
 
-    cafile_path = certifi.where()
-    _LOGGER.debug(f"Certifi CA bundle path: {cafile_path}")
+    certifi_bundle_path = certifi.where()
+    _LOGGER.debug(f"Certifi CA bundle path: {certifi_bundle_path}")
+
+    certifi_bundle_name = Path(certifi_bundle_path).name
+    certifi_backup = Path(CERTIFI_BACKUP_PATH, certifi_bundle_name)
+
+    if certifi_backup.exists():
+        # reset Certifi bundle
+        shutil.copyfile(certifi_backup, certifi_bundle_path)
+    else:
+        # backup Certifi bundle
+        Path(CERTIFI_BACKUP_PATH).mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(certifi_bundle_path, certifi_backup)
+
+    _LOGGER.info("Certifi bundle CA ready.")
 
     try:
-        with open(cafile_path, "r") as f:
+        with open(certifi_bundle_path, "r") as f:
             cacerts = f.read()
     except:
-        _LOGGER.warning(f"Unable to read {cafile_path}.")
+        _LOGGER.warning(f"Unable to read {certifi_bundle_path}.")
         raise
 
     for ca_idname, ca_filepath in conf.items():
@@ -161,7 +176,7 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
                 # original CA bundle can be fetched from upstream:
                 # https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
 
-                with open(cafile_path, "a") as cafile:
+                with open(certifi_bundle_path, "a") as cafile:
                     cafile.write("\n")
                     cafile.write(f"# {DOMAIN}: {ca_idname}\n")
                     cafile.write(cert)
