@@ -19,9 +19,9 @@ def remove_additional_ca(ca_filename: str) -> bool:
 
 def remove_all_additional_ca(additional_ca_store: dict) -> bool:
     """
-    Clean current user's additional CA.
-    Do not remove CA cert file not owned by user.
-    -> compare  with data stored in .storage (see homeassistnat.helpers.storage)
+    Removes current user's additional CA.
+    Does not remove CA cert file not owned by user, in case third party wants to add its own certs they are left untouched.
+    Compares CA_SYSPATH content with data stored in .storage (see homeassistant.helpers.storage)
     """
     for filename in os.listdir(CA_SYSPATH):
         for _, cafile in additional_ca_store.items():
