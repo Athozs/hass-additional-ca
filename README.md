@@ -453,19 +453,20 @@ Or
 
 ### 8.3. Tips
 
-To enable INFO logs level, add the following to your `configuration.yaml`:
+* To enable INFO logs level, add the following to your `configuration.yaml`:
 
 ```yaml
 logger:
   default: info
 ```
 
-To check your certificate validity, if using x509 certs, run:
+* To check your certificate validity, if using x509 certs, run:
 
 ```shell
 openssl x509 -in config/additional_ca/my_ca.crt -text -noout
 ```
 
+* To test manually that _Additional CA_ is working, see [Manual test with HTTPS](CONTRIBUTING.md#manual-test-with-https) from [CONTRIBUTING.md](CONTRIBUTING.md) docs.
 
 ## 9. KNOWN ISSUES
 
