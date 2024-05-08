@@ -1,6 +1,6 @@
 ---
 name: Issue report
-about: Create a report to help us improve
+about: Use this issue report if you face a problem with Additional CA integration for Home Assistant.
 title: ''
 labels: ''
 assignees: ''
@@ -9,18 +9,19 @@ assignees: ''
 
 **Describe the issue**
 
-A clear and concise description of what the issue is.
+Add here a clear and concise description of what the issue is.
 
 **Describe your setup (please complete the following information):**
 
- - Installation type: [e.g. HAOS / Docker / ...]
- - HAOS version (if applicable): [e.g. 11.5 / ... / none]
- - Home Assistant core version: [e.g. 2024.2.2 / ...]
- - Additional CA integration version [e.g. 0.2.1 / ...]
+ - Installation type: <!-- [e.g. HAOS / Docker / ...] -->
+ - HAOS version (if applicable): <!-- [e.g. 11.5 / ... ] -->
+ - Home Assistant core version: <!-- [e.g. 2024.2.2 / ...] -->
+ - Additional CA integration version: <!-- [e.g. 0.2.1 / ...] -->
+ - Kind of certificate you use: <!-- [e.g. self-signed / issued from a managed CA / ...] -->
 
 **YAML configuration extract**
 
-An extract of your YAML configuration:
+Add here an extract of your YAML configuration:
 
 ```yaml
 default_config:
@@ -29,7 +30,9 @@ default_config:
 
 **Logs**
 
-If applicable, add logs or screenshots to help explain your problem.
+If applicable, add here logs or screenshots to help explain your problem.
+
+It could be error logs from Home Assistant Settings > System > Logs.
 
 **Additional context**
 
