@@ -89,8 +89,10 @@ __Table of contents__
   - [6. HOW TO REMOVE A PRIVATE CA ?](#6-how-to-remove-a-private-ca-)
   - [7. UNINSTALL](#7-uninstall)
   - [8. TROUBLESHOOTING](#8-troubleshooting)
-    - [8.1. Docker](#81-docker)
-    - [8.2. HAOS - Home Assistant Operating System](#82-haos---home-assistant-operating-system)
+    - [8.1. General troubleshooting](#81-general-troubleshooting)
+    - [8.2. Reset CA trust store of Home Assistant](#82-reset-ca-trust-store-of-home-assistant)
+      - [8.2.1. Docker](#821-docker)
+      - [8.2.2. HAOS - Home Assistant Operating System](#822-haos---home-assistant-operating-system)
     - [8.3. Tips](#83-tips)
   - [9. KNOWN ISSUES](#9-known-issues)
 
@@ -414,12 +416,20 @@ docker compose up -d --force-recreate
 
 ## 8. TROUBLESHOOTING
 
-Some tips to clean your system CA in case of failure.
+Some tips to clean your CA trust store inside Home Assistant in case of failure.
 
 
-### 8.1. Docker
+### 8.1. General troubleshooting
 
-If running Home Assistant with Docker:
+* Enable INFO logs level in Home Assistant (see Tips below)
+* Check error logs in Home Assistant Settings > System > Logs
+
+
+### 8.2. Reset CA trust store of Home Assistant
+
+#### 8.2.1. Docker
+
+To reset CA trust store, if running Home Assistant with Docker:
 
 Either
 
@@ -428,12 +438,12 @@ Either
 Or
 
 - Manually remove private CA files from `/usr/local/share/ca-certificates/` directory inside HA container.
-- Then update manually system CA running command `update-ca-certificates` inside HA container.
+- Then update manually CA trust store running command `update-ca-certificates` inside HA container.
 
 
-### 8.2. HAOS - Home Assistant Operating System
+#### 8.2.2. HAOS - Home Assistant Operating System
 
-If running Home Assistant from HAOS or Supervised installation type, you could reset Certifi CA bundle, two ways possible:
+To reset CA trust store, if running Home Assistant from HAOS or Supervised installation type, you could reset Certifi CA bundle, two ways possible:
 
 Either
 
