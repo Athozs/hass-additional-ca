@@ -1,5 +1,7 @@
-homeassistant==2024.1.5
+homeassistant==2024.6.2
 colorlog
 isort[colors]
 black
 pylint
+
+aiofiles==23.2.1

@@ -6,7 +6,7 @@ import logging
 import os
 from pathlib import Path
 import shutil
-
+import aiofiles
 import certifi
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -102,7 +102,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
             continue
 
         if os.path.isfile(additional_ca_fullpath):
-            ca_uname = copy_ca_to_system(additional_ca_fullpath)
+            ca_uname = await copy_ca_to_system(hass, additional_ca_fullpath)
             try:
                 update_system_ca()
             except:
@@ -142,17 +142,17 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
 
     if certifi_backup.exists():
         # reset Certifi bundle
-        shutil.copyfile(certifi_backup, certifi_bundle_path)
+        await hass.async_add_executor_job(shutil.copyfile, certifi_backup, certifi_bundle_path)
     else:
         # backup Certifi bundle
         Path(CERTIFI_BACKUP_PATH).mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(certifi_bundle_path, certifi_backup)
+        await hass.async_add_executor_job(shutil.copyfile, certifi_bundle_path, certifi_backup)
 
     _LOGGER.info("Certifi bundle CA ready.")
 
     try:
-        with open(certifi_bundle_path, "r") as f:
-            cacerts = f.read()
+        async with aiofiles.open(certifi_bundle_path, "r") as f:
+            cacerts = await f.read()
     except:
         _LOGGER.warning(f"Unable to read {certifi_bundle_path}.")
         raise
@@ -165,8 +165,8 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
             continue
 
         if os.path.isfile(additional_ca_fullpath):
-            with open(additional_ca_fullpath, "r") as f:
-                cert = f.read()
+            async with aiofiles.open(additional_ca_fullpath, "r") as f:
+                cert = await f.read()
 
             # Check if the private cert is present in CA bundle
             # Note: any Byte changes in source file will trigger a warning 're-add dup' (no harm)
@@ -176,10 +176,10 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
                 # original CA bundle can be fetched from upstream:
                 # https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
 
-                with open(certifi_bundle_path, "a") as cafile:
-                    cafile.write("\n")
-                    cafile.write(f"# {DOMAIN}: {ca_idname}\n")
-                    cafile.write(cert)
+                async with aiofiles.open(certifi_bundle_path, "a") as cafile:
+                    await cafile.write("\n")
+                    await cafile.write(f"# {DOMAIN}: {ca_idname}\n")
+                    await cafile.write(cert)
 
                 _LOGGER.info(f"{ca_idname} ({ca_filepath}) -> loaded into Certifi CA bundle.")
 

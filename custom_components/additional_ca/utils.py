@@ -6,6 +6,7 @@ import random
 import shutil
 import string
 import subprocess
+from homeassistant.core import HomeAssistant
 
 from .const import CA_SYSPATH, UPDATE_CA_SYSCMD
 
@@ -35,10 +36,10 @@ def remove_all_additional_ca(additional_ca_store: dict) -> bool:
     return True
 
 
-def copy_ca_to_system(ca_src_fullpath: str) -> str:
+async def copy_ca_to_system(hass: HomeAssistant, ca_src_fullpath: str) -> str:
     ca_file = os.path.basename(ca_src_fullpath)
     unique_ca_name = f"{generate_uid()}_{ca_file}"
-    shutil.copy(ca_src_fullpath, os.path.join(CA_SYSPATH, unique_ca_name))
+    await hass.async_add_executor_job(shutil.copy, ca_src_fullpath, os.path.join(CA_SYSPATH, unique_ca_name))
     return unique_ca_name
 
 

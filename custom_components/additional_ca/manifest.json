@@ -8,6 +8,6 @@
   "documentation": "https://www.github.com/Athozs/hass-additional-ca",
   "iot_class": "local_push",
   "issue_tracker" : "https://github.com/Athozs/hass-additional-ca/issues",
-  "requirements": [],
+  "requirements": ["aiofiles==23.2.1"],
   "version": "0.0.0"
 }
