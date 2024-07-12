@@ -6,6 +6,6 @@ cd "$(dirname "$0")/.."
 
 mkdir -p config/additional_ca
 
-rsync -ac --delete --exclude="__pycache__" custom_components config/
+cp -rv custom_components config/
 
-docker compose up --force-recreate --remove-orphans
+docker compose -f compose_dev.yml up --force-recreate --remove-orphans
