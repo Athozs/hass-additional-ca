@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 import aiofiles
 import certifi
 import homeassistant.helpers.config_validation as cv
@@ -14,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.system_info import async_get_system_info
 from homeassistant.helpers.typing import ConfigType
 
-from .const import CONFIG_SUBDIR, DOMAIN, CERTIFI_BACKUP_PATH
+from .const import CERTIFI_BACKUP_PATH, CONFIG_SUBDIR, DOMAIN
 from .storage import AdditionalCAStore
 from .utils import (
     copy_ca_to_system,
@@ -78,7 +79,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
 
     # clean user's current additional CA
     try:
-        remove_all_additional_ca(additional_ca_data)
+        await remove_all_additional_ca(hass, additional_ca_data)
     except:
         raise
 

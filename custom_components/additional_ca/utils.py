@@ -6,6 +6,7 @@ import random
 import shutil
 import string
 import subprocess
+
 from homeassistant.core import HomeAssistant
 
 from .const import CA_SYSPATH, UPDATE_CA_SYSCMD
@@ -18,13 +19,14 @@ def remove_additional_ca(ca_filename: str) -> bool:
     return True
 
 
-def remove_all_additional_ca(additional_ca_store: dict) -> bool:
+async def remove_all_additional_ca(hass: HomeAssistant, additional_ca_store: dict) -> bool:
     """
     Removes current user's additional CA.
     Does not remove CA cert file not owned by user, in case third party wants to add its own certs they are left untouched.
     Compares CA_SYSPATH content with data stored in .storage (see homeassistant.helpers.storage)
     """
-    for filename in os.listdir(CA_SYSPATH):
+    ca_files_list = await hass.async_add_executor_job(os.listdir, CA_SYSPATH)
+    for filename in ca_files_list:
         for _, cafile in additional_ca_store.items():
             if filename == cafile:
                 file_path = os.path.join(CA_SYSPATH, filename)
