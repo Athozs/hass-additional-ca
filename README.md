@@ -481,6 +481,7 @@ Or
 * To enable INFO logs level, add the following to your `configuration.yaml`:
 
 ```yaml
+# configuration.yaml
 logger:
   default: info
 ```

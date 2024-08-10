@@ -37,6 +37,8 @@ cp ca.crt config/additional_ca/
 - Add the following config to `configuration.yaml`:
 
 ```yaml
+# configuration.yaml
+
 logger:
   default: info
 
