@@ -9,7 +9,7 @@ assignees: ''
 
 **Describe the issue**
 
-Add here a clear and concise description of what the issue is.
+<!-- Add here a clear and concise description of what the issue is. -->
 
 **Describe your setup (please complete the following information):**
 
@@ -21,7 +21,7 @@ Add here a clear and concise description of what the issue is.
 
 **YAML configuration extract**
 
-Add here an extract of your YAML configuration:
+<!-- Add here an extract of your YAML configuration: -->
 
 ```yaml
 default_config:
@@ -30,12 +30,12 @@ default_config:
 
 **Logs**
 
-If applicable, add here logs or screenshots to help explain your problem.
+<!-- If applicable, add here logs or screenshots to help explain your problem. -->
 
-It could be error logs from Home Assistant Settings > System > Logs.
+<!-- It could be error logs from Home Assistant Settings > System > Logs. -->
 
 **Additional context**
 
  - What service/device are you trying to reach from Home Assistant with TLS/SSL ?
 
-Add any other context about the problem here.
+<!-- Add any other context about the problem here. -->
