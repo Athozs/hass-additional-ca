@@ -108,26 +108,23 @@ __Table of contents__
 
 ## 1. INSTALL WITH HACS
 
-* [Install HACS](https://hacs.xyz/docs/setup/prerequisites) if not already done.
+* [Install HACS](https://hacs.xyz/docs/use/) if not already done.
 * Then, go to your Home Assistant,
     * -> HACS
-    * -> Integrations
-    * -> Click _Explore and Download Repositories_
     * -> Search for "Additional CA"
-    * -> From the _Additional CA_ presentation page: click _Download_
+    * -> Click the three-dots menu in line with _Additional CA_, then click _Download_
 
 <!--
 If _Additional CA_ integration is not available from HACS interface, install _Additional CA_ by adding this Github repository to HACS custom repositories:
 
-* [Install HACS](https://hacs.xyz/docs/setup/prerequisites) if not already done.
+* [Install HACS](https://hacs.xyz/docs/use/) if not already done.
 * Then, go to your Home Assistant,
     * -> HACS
-    * -> Integrations
-    * -> Click the Three-dots button in top-right corner
+    * -> Click the three-dots menu in top-right corner
     * -> Custom repositories
     * -> Fill in
       - Repository: https://github.com/Athozs/hass-additional-ca.git
-      - Category: Integration
+      - Type: Integration
     * -> Click Add
 
 ![](img/hacs-custom-repo.png) ![](img/hacs-repo-box.png)
@@ -412,7 +409,7 @@ rest_command:
 
 #### 7.2.1. Docker
 
-From your shell prompt, run:
+If you're running Home Assistant with Docker, then from your shell prompt, run:
 
 ```shell
 docker exec CONTAINER_NAME curl -v -I https://your-server.com
@@ -423,7 +420,10 @@ You should see an HTTP code 200 to confirm success.
 
 #### 7.2.2. HAOS - Home Assistant Operating System
 
-From HAOS (SSH connected) command line, run:
+If you're running Home Assistant from HAOS:
+
+- Turn off Protection mode on SSH add-on in order to enable `docker` CLI (Settings > Add-ons > SSH > turn off Protection mode).
+- Connect to HAOS with SSH, then from command line, run:
 
 ```shell
 docker exec homeassistant curl -v -I https://your-server.com
@@ -458,9 +458,8 @@ Then, restart Home Assistant.
 
 Uninstall from HACS, go to your Home Assistant,
 * -> HACS
-* -> Integrations
-* -> Additional CA
-* -> From the three-dots menu: click _Remove_
+* -> Locate _Additional CA_
+* -> Click the three-dots menu in line with _Additional CA_, then click _Remove_
 
 Or uninstall manually:
 
@@ -523,7 +522,8 @@ Otherwise you could do the following:
 
 To reset CA trust store in Home Assistant from HAOS or Supervised installation, you could reset Certifi CA bundle:
 
-- Stop and remove `homeassistant` Docker container inside HAOS and reboot HAOS. From HAOS (SSH connected) command line, run:
+- Turn off Protection mode on SSH add-on in order to enable `docker` CLI (Settings > Add-ons > SSH > turn off Protection mode)
+- Connect to HAOS with SSH, then from command line, run the following to stop and remove `homeassistant` Docker container inside HAOS and reboot HAOS:
 
 ```shell
 docker stop homeassistant
@@ -533,8 +533,9 @@ reboot
 
 Otherwise you could do the following:
 
-- Downloading original bundle from https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
-- Replace it at Certifi bundle path (to get Certifi bundle path: run the following from HAOS (SSH connected) command line `docker exec -ti homeassistant python -m certifi`).
+- Download original bundle from https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
+- Replace it at Certifi bundle path
+    - To get Certifi bundle path: Connect to HAOS with SSH, then from command line, run `docker exec -ti homeassistant python -m certifi`.
 
 
 ### 10.3. Tips
