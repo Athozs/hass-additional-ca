@@ -249,7 +249,7 @@ Directories structure example:
 │   │   ├── selfcert.crt
 │   │   └── my_folder/
 │   │       └── selfcert_2.pem
-│   │   └── some-super-ca/
+│   │   └── some_folder/
 |   |       ├── ca2.pem
 │   │       └── ca3.crt
 │   ├── blueprints/
@@ -264,7 +264,18 @@ Directories structure example:
 ...
 ```
 
-3. Enable _Additional CA_ integration in `configuration.yaml` and set private CAs:
+3. Enable _Additional CA_ integration in `configuration.yaml` and set private CAs.
+
+_Additional CA_ searches into `config/additional_ca/` to find your CA, with `config/additional_ca/my_ca.crt` your `configuration.yaml` looks like this:
+
+```yaml
+# configuration.yaml
+---
+default_config:
+additional_ca:
+  some_ca: my_ca.crt
+# ...
+```
 
 Model:
 
@@ -278,16 +289,16 @@ additional_ca:
   # ...: ...
 ```
 
-Example:
+An other example:
 
 ```yaml
 # configuration.yaml
 ---
 default_config:
 additional_ca:
-  my_awesome_ca: my_ca.crt                         # a cert file
-  a_super_ca: some-super-ca/ca2.pem                # relative path + a cert file
-  again_another_super_ca: some-super-ca/ca3.crt    # relative path + a cert file
+  some_ca: my_ca.crt                               # a cert file
+  ca_foo: some_folder/ca2.pem                      # relative path + a cert file
+  ca_bar: some_folder/ca3.crt                      # relative path + a cert file
   my_self_signed_cert: selfcert.crt                # a self-signed certificate
   self_signed_crt: my_folder/selfcert_2.pem        # relative path + a self-signed certificate
 # ...
@@ -441,7 +452,7 @@ Remove or comment CA entry under `additional_ca` domain key in `configuration.ya
 ---
 default_config:
 additional_ca:
-  # my_awesome_ca: my_ca.crt
+  # some_ca: my_ca.crt
 # ...
 ```
 
@@ -474,7 +485,7 @@ rm -r config/custom_components/additional_ca
 ---
 default_config:
 # additional_ca:
-#   my_awesome_ca: my_ca.crt
+#   some_ca: my_ca.crt
 # ...
 ```
 
