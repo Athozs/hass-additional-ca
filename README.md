@@ -135,7 +135,7 @@ If _Additional CA_ integration is not available from HACS interface, install _Ad
 
 ### 2.1. Docker
 
-If you're running Home Assistant with Docker:
+To install without HACS, if you're running Home Assistant with Docker:
 
 * Download and install using `git`:
 
@@ -175,7 +175,7 @@ cp -r additional_ca config/custom_components/
 
 ### 2.2. HAOS - Home Assistant Operating System
 
-If you're running Home Assistant from HAOS:
+To install without HACS, if you're running Home Assistant from HAOS:
 
 * Go to the [Add-on store](https://my.home-assistant.io/redirect/supervisor_store/)
 * Install one of the SSH add-ons (you need to enable advanced mode in your user profile to see them)
@@ -210,6 +210,8 @@ If you're running Home Assistant core (Python package) directly on host, you don
 ## 3. CONFIGURATION
 
 For now, _Additional CA_ won't be visible in Home Assistant integrations dashboard, there is no UI component for _Additional CA_ integration. This may be possible in future release.
+
+To configure _Additional CA_ integration, follow these steps:
 
 1. CA files must be in PEM format (often `.crt` or `.pem` extension). Check content with a text editor. Content example (following is a fake):
 
@@ -365,6 +367,18 @@ If you're running Home Assistant from HAOS or Supervised installation, _Addition
 
 Thus, for HAOS, your private CA or self-signed cert will appear in container CA trust store and in Certifi CA bundle (both inside `homeassistant` container).
 
+To show Certifi CA bundle content:
+
+- Turn off Protection mode on SSH add-on in order to enable `docker` CLI (Settings > Add-ons > SSH > turn off Protection mode).
+- Connect to HAOS with SSH, then from command line, run:
+
+```shell
+# Get certifi bundle path
+docker exec homeassistant python -m certifi
+# Replace XX with actual Python version
+docker exec homeassistant cat "/usr/local/lib/python3.XX/site-packages/certifi/cacert.pem"
+```
+
 After upgrading Home Assistant to a new version, you need to reboot Home Assistant to load again your certificates.
 
 
@@ -385,7 +399,7 @@ Anyway, setting environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certi
 
 ### 7.1. Test with RESTful Command action
 
-After adding your CA, you could create a test action/service to verify https connection is working.
+After adding your CA, you could create a test action/service to verify **https** connection is working.
 
 - Here is an example of `configuration.yaml` to create an action `RESTful Command: additional_ca_test`:
 
@@ -420,7 +434,7 @@ rest_command:
 
 #### 7.2.1. Docker
 
-If you're running Home Assistant with Docker, then from your shell prompt, run:
+To test your CA using `curl`, if you're running Home Assistant with Docker, then from your shell prompt, run:
 
 ```shell
 docker exec CONTAINER_NAME curl -v -I https://your-server.com
@@ -431,7 +445,7 @@ You should see an HTTP code 200 to confirm success.
 
 #### 7.2.2. HAOS - Home Assistant Operating System
 
-If you're running Home Assistant from HAOS:
+To test your CA using `curl`, if you're running Home Assistant from HAOS:
 
 - Turn off Protection mode on SSH add-on in order to enable `docker` CLI (Settings > Add-ons > SSH > turn off Protection mode).
 - Connect to HAOS with SSH, then from command line, run:
@@ -445,7 +459,7 @@ You should see an HTTP code 200 to confirm success.
 
 ## 8. HOW TO REMOVE A PRIVATE CA ?
 
-Remove or comment CA entry under `additional_ca` domain key in `configuration.yaml`:
+To remove your CA, remove or comment CA entry under `additional_ca` domain key in `configuration.yaml`:
 
 ```yaml
 # configuration.yaml
@@ -464,6 +478,8 @@ Then, restart Home Assistant.
 
 
 ## 9. UNINSTALL
+
+To uninstall _Additional CA_ integration, follow these steps:
 
 1. Delete _Additional CA_ from custom components:
 
@@ -546,7 +562,7 @@ Otherwise you could do the following:
 
 - Download original bundle from https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
 - Replace it at Certifi bundle path
-    - To get Certifi bundle path: Connect to HAOS with SSH, then from command line, run `docker exec -ti homeassistant python -m certifi`.
+    - To get Certifi bundle path: Connect to HAOS with SSH, then from command line, run `docker exec homeassistant python -m certifi`.
 
 
 ### 10.3. Tips
