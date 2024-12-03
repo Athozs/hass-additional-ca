@@ -329,9 +329,11 @@ services:
 
 5. Restart Home Assistant.
 
+Some integrations need to be set up all over again to take CA trust store (newly containing your private CA) into account.
+
 After upgrading Home Assistant to a new version, you need to reboot Home Assistant to load again your certificates.
 
-6. Check the logs, look for pattern `additional_ca` in traces (there is not UI for _Additional CA_).
+6. Check the logs, look for pattern `additional_ca` in traces (there is no UI for _Additional CA_).
 
 
 ## 4. UPGRADE
@@ -527,8 +529,9 @@ Some tips to clean your CA trust store inside Home Assistant in case of failure.
 
 ### 10.1. General troubleshooting
 
-* Enable INFO logs level in Home Assistant (see Tips below)
-* Check error logs in Home Assistant Settings > System > Logs
+* Enable INFO logs level in Home Assistant (see Tips below).
+* Check error logs in Home Assistant Settings > System > Logs.
+* Some integrations need to be set up all over again to take CA trust store (newly containing your private CA) into account.
 
 
 ### 10.2. Reset CA trust store of Home Assistant
