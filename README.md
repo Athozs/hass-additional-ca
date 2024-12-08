@@ -35,7 +35,7 @@ Scenario: you want to import Certificate file into Home Assistant OS trust store
 
 ## 📘 Quick Setup (TL;DR)
 
-1. [Install HACS](https://hacs.xyz/docs/setup/prerequisites)
+1. [Install HACS](https://www.hacs.xyz/docs/use/)
 2. Install _Additional CA_ integration via HACS or manually without HACS, full docs here-under
 3. Copy private CA to config folder:
 
