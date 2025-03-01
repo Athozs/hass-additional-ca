@@ -223,8 +223,6 @@ To configure _Additional CA_ integration, follow these steps:
 
 1. CA files must be in PEM format (often `.crt` or `.pem` extension). Check content with a text editor. Here is an example of a certificate file (the following is a fake):
 
-⚠️ Since Home Assistant core 2024.12.x and newer, Home Assistant includes Python 3.13 and newer which requires to have Certificate Authority with Basic Constraints marked as critical, see https://github.com/home-assistant/core/issues/133506#issuecomment-2573502355
-
 ```text
 -----BEGIN CERTIFICATE-----
 ACeuur4QnujqmguSrHU3mhf+cJodzTQNqo4tde+PD1/eFdYAELu8xF+0At7xJiPY
@@ -241,7 +239,9 @@ F10YlqcOmeX1uFmKbdi/XorGlkCoMF3TDx8rmp9DBiB
 -----END CERTIFICATE-----
 ```
 
-1. Create directory `config/additional_ca` and copy your private CA into it:
+⚠️ Since Home Assistant core 2024.12.x and newer, Home Assistant includes Python 3.13 and newer which requires to have Certificate Authority with Basic Constraints marked as critical, see an example here: https://github.com/Athozs/hass-additional-ca/issues/13#issuecomment-2645805367 , see why here: https://github.com/home-assistant/core/issues/133506#issuecomment-2573502355
+
+2. Create directory `config/additional_ca` and copy your private CA into it:
 
 ```shell
 mkdir -p config/additional_ca
