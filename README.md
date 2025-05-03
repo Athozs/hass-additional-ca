@@ -598,4 +598,4 @@ openssl x509 -in config/additional_ca/my_ca.crt -text -noout
 
 ## 11. KNOWN ISSUES
 
-n/a
+* In some cases, have to restart twice Home Assistant to take new CA into account.
