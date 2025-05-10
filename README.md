@@ -25,7 +25,7 @@ _Additional CA_ integration for Home Assistant loads automatically private Certi
 
 ## 📘 What are use-cases with this integration ?
 
-Scenario: you want to import Certificate file into Home Assistant OS trust store or Home Assistant Docker container trust store, in order to access 3rd-party service with TLS/SSL:
+Scenario: you want to import Certificate file into Home Assistant OS (HAOS) trust store or Home Assistant Docker container trust store, in order to access 3rd-party service with TLS/SSL:
 
 * Some of your installed integrations in Home Assistant need to access devices or third-party services with TLS/SSL (HTTPS, etc), and you got a `ca.crt` (or equivalent) from the service provider, ➡ you can load it with _Additional CA_ integration.
 * You generated a self-signed TLS/SSL certificate for your own service (personal HTTPS Web server, SMTP, LDAP, etc) that you want to be trusted by Home Assistant, ➡ you can load it with _Additional CA_ integration.
@@ -53,7 +53,7 @@ additional_ca:
 # ...
 ```
 
-4. Export environment variable if running Home Assistant with Docker (no need in case of Home Assistant OS):
+4. Export environment variable if running Home Assistant with Docker (no need in case of installation type Home Assistant OS (HAOS)):
 
 ```yaml
 # compose.yml
@@ -92,6 +92,8 @@ __Table of contents__
     - [5.1. Docker](#51-docker)
     - [5.2. HAOS - Home Assistant Operating System](#52-haos---home-assistant-operating-system)
   - [6. SET `REQUESTS_CA_BUNDLE` ENVIRONMENT VARIABLE](#6-set-requests_ca_bundle-environment-variable)
+    - [6.1. Docker and Core](#61-docker-and-core)
+    - [6.2. HAOS - Home Assistant Operating System](#62-haos---home-assistant-operating-system)
   - [7. HOW TO TEST YOUR CA WITH HTTPS](#7-how-to-test-your-ca-with-https)
     - [7.1. Test with RESTful Command action](#71-test-with-restful-command-action)
     - [7.2. Test with `curl`](#72-test-with-curl)
@@ -396,15 +398,21 @@ After upgrading Home Assistant to a new version, you need to reboot Home Assista
 
 ## 6. SET `REQUESTS_CA_BUNDLE` ENVIRONMENT VARIABLE
 
-Home Assistant implements an SSL context based on the environment variable `REQUESTS_CA_BUNDLE`.
+Home Assistant implements a [Python SSL context](https://docs.python.org/3/library/ssl.html#ssl.SSLContext) based on the environment variable `REQUESTS_CA_BUNDLE`.
 
-Only for Docker installation type and Core installation type, you may need to set environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt`
+
+### 6.1. Docker and Core
+
+If you're running Home Assistant with Docker or Core installation, you may need to set environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt` (it won't work permanently on HAOS).
 
 This is optional, it depends on your installed integrations.
 
 Anyway, setting environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt` __should not__ break your Home Assistant server.
 
- > 📝 __Note__: At time of writing, I could not find on the internet a reliable way to set permanently an environment variable in Home Assistant OS. As a workaround, _Additional CA_ integration adds your private CA into Certifi CA bundle if not yet present.
+
+### 6.2. HAOS - Home Assistant Operating System
+
+ > 📝 __Note__: At time of writing, I could not find on the internet a reliable way to set permanently an environment variable in Home Assistant OS (HAOS). As a workaround, _Additional CA_ integration adds your private CA into Certifi CA bundle if not yet present.
 
 
 ## 7. HOW TO TEST YOUR CA WITH HTTPS
@@ -598,4 +606,4 @@ openssl x509 -in config/additional_ca/my_ca.crt -text -noout
 
 ## 11. KNOWN ISSUES
 
-* In some cases, have to restart twice Home Assistant to take new CA into account.
+* In some cases, have to restart twice Home Assistant to take new CA into account, this is due to Home Assistant to create an SSL context before integrations could be loaded.
