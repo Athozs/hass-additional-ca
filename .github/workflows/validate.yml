@@ -8,8 +8,8 @@ on:
     tags-ignore:
       - "**"
   pull_request:
-  schedule:
-    - cron: "0 0 * * *"
+  # schedule:
+  #   - cron: "0 0 * * *"
 
 jobs:
   validate-hassfest:
