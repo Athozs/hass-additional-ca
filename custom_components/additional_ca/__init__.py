@@ -129,9 +129,10 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
 
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
 
-    if not config_path.exists() and not config_path.is_dir():
-        msg = f"Folder '{CONFIG_SUBDIR}' not found in configuration folder."
-        raise Exception(msg)
+    if not config_path.exists():
+        raise Exception(f"Folder '{CONFIG_SUBDIR}' not found in configuration folder.")
+    elif not config_path.is_dir():
+        raise Exception(f"'{CONFIG_SUBDIR}' must be a directory.")
 
     # original Certifi CA bundle is available at:
     # https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
@@ -159,14 +160,18 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
         _LOGGER.warning(f"Unable to read '{certifi_bundle_path}'.")
         raise
 
-    for ca_idname, ca_filepath in conf.items():
-        additional_ca_fullpath = Path(config_path, ca_filepath)
+    for ca_key, ca_value in conf.items():
+        additional_ca_fullpath = Path(config_path, ca_value)
 
         if not additional_ca_fullpath.exists():
-            _LOGGER.warning(f"{ca_idname}: {ca_filepath} not found.")
+            _LOGGER.warning(f"{ca_key}: {ca_value} not found.")
             continue
         elif not additional_ca_fullpath.is_file():
             _LOGGER.warning(f"'{additional_ca_fullpath}' is not a file.")
+            continue
+
+        issuer_cn = await get_issuer_common_name(additional_ca_fullpath)
+        if not issuer_cn:
             continue
 
         async with aiofiles.open(additional_ca_fullpath, "r") as f:
@@ -177,6 +182,6 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
         if cert not in certifi_bundle:
             async with aiofiles.open(certifi_bundle_path, "a") as cafile:
                 await cafile.write("\n")
-                await cafile.write(f"# {DOMAIN}: {ca_idname}\n")
+                await cafile.write(f"# {DOMAIN}: {ca_key}\n")
                 await cafile.write(cert)
-            _LOGGER.info(f"{ca_idname} ({ca_filepath}) -> loaded into Certifi CA bundle.")
+            _LOGGER.info(f"{ca_key} ({ca_value}) -> loaded into Certifi CA bundle.")
