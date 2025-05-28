@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Python (version 3.12 currently)
+- Python (version 3.13 currently)
 - Pip
 - Docker and Docker Compose
 

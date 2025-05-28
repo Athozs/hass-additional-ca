@@ -370,7 +370,7 @@ When enabled, _Additional CA_ integration looks for private Certificates Authori
 
 _Additional CA_ integration loads private CA and self-signed certs only at Home Assistant startup.
 
-_Additional CA_ integration copies private CA and self-signed certs to `/usr/local/share/ca-certificates/` directory inside container and uses `update-ca-certificates` command line to update TLS/SSL trust store.
+_Additional CA_ integration copies private CA and self-signed certs to `/usr/local/share/ca-certificates/` directory inside container and runs `update-ca-certificates` command line to update TLS/SSL trust store.
 
 
 ### 5.2. HAOS - Home Assistant Operating System
