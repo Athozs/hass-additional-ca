@@ -69,33 +69,79 @@ def update_system_ca() -> None:
         raise Exception(f"'{UPDATE_CA_SYSCMD}' status returned an error -> {status.stderr.decode().rstrip()}")
 
 
-async def check_ssl_context(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
+async def check_ssl_context_by_issuer_cn(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
     certs = client_context().get_ca_certs()
+    certs_string = str(certs)
+
+    # _LOGGER.info(f"certs={certs}")
+    # _LOGGER.info(f"certs_string={certs_string}")
 
     for ca_file, common_name in ca_files.items():
-        # commonName is stored in nested tuples in SSLContext
-        contains_custom_ca = any(cert.get("issuer")[0][0][1] == common_name for cert in certs)
-        if not contains_custom_ca:
+        if not common_name:
+            continue
+
+        contains_custom_ca = False
+        if common_name in certs_string:
+            contains_custom_ca = True
+
+        notif_id = f"{common_name}_{NEEDS_RESTART_NOTIF_ID}"
+        if contains_custom_ca:
+            _LOGGER.info(f"SSL Context contains CA '{ca_file}' with issuer common name '{common_name}'.")
+            persistent_notification.async_dismiss(hass, notif_id)
+            break
+        else:
             msg = f"CA '{ca_file}' with issuer common name '{common_name}' is missing in SSL Context. Home Assistant needs to be restarted."
             _LOGGER.error(msg)
-            persistent_notification.async_create(hass, message=msg, title="Additional CA (custom integration)", notification_id=NEEDS_RESTART_NOTIF_ID)
+            persistent_notification.async_create(
+                hass,
+                message=msg,
+                title="Additional CA (custom integration)",
+                notification_id=notif_id
+            )
+
+
+async def check_ssl_context_by_sn(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
+    certs = client_context().get_ca_certs()
+    certs_string = str(certs)
+
+    # _LOGGER.info(f"certs={certs}")
+    # _LOGGER.info(f"certs_string={certs_string}")
+
+    for ca_file, serial_number in ca_files.items():
+        if not serial_number:
+            continue
+
+        contains_custom_ca = False
+        if serial_number in certs_string:
+            contains_custom_ca = True
+
+        notif_id = f"{serial_number}_{NEEDS_RESTART_NOTIF_ID}"
+        if contains_custom_ca:
+            _LOGGER.info(f"SSL Context contains CA with serial number '{serial_number}'.")
+            persistent_notification.async_dismiss(hass, notif_id)
+            break
         else:
-            for cert in certs:
-                if common_name in cert.get("issuer")[0][0][1]:
-                    _LOGGER.info(f"Found CA with issuer common name '{common_name}'.")
-                    persistent_notification.async_dismiss(hass, NEEDS_RESTART_NOTIF_ID)
+            msg = f"CA '{ca_file}' with serial number '{serial_number}' is missing in SSL Context. Home Assistant needs to be restarted."
+            _LOGGER.error(msg)
+            persistent_notification.async_create(
+                hass,
+                message=msg,
+                title="Additional CA (custom integration)",
+                notification_id=notif_id
+            )
 
 
 async def get_issuer_common_name(cert_file: Path) -> str:
     async with aiofiles.open(cert_file, "rb") as cf:
         cert_data = await cf.read()
 
-    common_name = None
+    common_name = ""
     try:
         cert = x509.load_pem_x509_certificate(cert_data, default_backend())
         issuer = cert.issuer
     except ValueError:
         _LOGGER.warning(f"The file '{cert_file.name}' appears to be an invalid TLS/SSL certificate.")
+        common_name = None
     except Exception:
         _LOGGER.error(f"Could not get issuer common name from '{cert_file.name}'.")
         raise
@@ -106,6 +152,24 @@ async def get_issuer_common_name(cert_file: Path) -> str:
                 break
 
     return common_name
+
+
+async def get_serial_number_from_cert(cert_file: Path) -> str:
+    async with aiofiles.open(cert_file, "rb") as cf:
+        cert_data = await cf.read()
+
+    serial_number = None
+    try:
+        cert = x509.load_pem_x509_certificate(cert_data, default_backend())
+        serial_number = str(cert.serial_number)
+    except ValueError:
+        _LOGGER.warning(f"The file '{cert_file.name}' appears to be an invalid TLS/SSL certificate.")
+    except Exception:
+        _LOGGER.error(f"Could not get issuer common name from '{cert_file.name}'.")
+        raise
+
+    _LOGGER.info(f"serial_number from custom CA={serial_number}")
+    return serial_number
 
 
 def generate_uid(length: int = 8) -> str:

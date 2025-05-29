@@ -16,7 +16,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import CERTIFI_BACKUP_PATH, CONFIG_SUBDIR, DOMAIN
 from .storage import AdditionalCAStore
-from .utils import check_ssl_context, copy_ca_to_system, get_issuer_common_name, remove_additional_ca, remove_all_additional_ca, update_system_ca
+from .utils import check_ssl_context_by_issuer_cn, check_ssl_context_by_sn, copy_ca_to_system, get_issuer_common_name, get_serial_number_from_cert, remove_additional_ca, remove_all_additional_ca, update_system_ca
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +51,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             raise
 
     try:
-        await check_ssl_context(hass, ca_files)
+        await check_ssl_context_by_issuer_cn(hass, ca_files)
+        # await check_ssl_context_by_sn(hass, ca_files)
     except Exception:
         _LOGGER.error("Could not check SSL context.")
         raise
@@ -99,11 +100,13 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
             _LOGGER.warning(f"'{additional_ca_fullpath}' is not a file.")
             continue
 
-        issuer_cn = await get_issuer_common_name(additional_ca_fullpath)
-        if issuer_cn:
-            ca_files_dict[ca_value] = issuer_cn
-        else:
+        identifier = await get_issuer_common_name(additional_ca_fullpath)
+        # identifier = await get_serial_number_from_cert(additional_ca_fullpath)
+        if identifier is None:
             continue
+
+        _LOGGER.info(f"{ca_value} identifier: '{identifier}'")
+        ca_files_dict[ca_value] = identifier
 
         ca_id = await copy_ca_to_system(hass, additional_ca_fullpath)
         try:
@@ -170,8 +173,9 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
             _LOGGER.warning(f"'{additional_ca_fullpath}' is not a file.")
             continue
 
-        issuer_cn = await get_issuer_common_name(additional_ca_fullpath)
-        if not issuer_cn:
+        identifier = await get_issuer_common_name(additional_ca_fullpath)
+        # identifier = await get_serial_number_from_cert(additional_ca_fullpath)
+        if identifier is None:
             continue
 
         async with aiofiles.open(additional_ca_fullpath, "r") as f:
