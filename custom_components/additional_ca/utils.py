@@ -88,7 +88,6 @@ async def check_ssl_context_by_issuer_cn(hass: HomeAssistant, ca_files: dict[str
         if contains_custom_ca:
             _LOGGER.info(f"SSL Context contains CA '{ca_file}' with issuer common name '{common_name}'.")
             persistent_notification.async_dismiss(hass, notif_id)
-            break
         else:
             msg = f"CA '{ca_file}' with issuer common name '{common_name}' is missing in SSL Context. Home Assistant needs to be restarted."
             _LOGGER.error(msg)
