@@ -4,10 +4,6 @@ on:
   release:
     types: [published]
 
-defaults:
-  run:
-    working-directory: custom_components
-
 jobs:
   publish:
     name: "Publish"
@@ -18,16 +14,15 @@ jobs:
 
       - name: "Update version"
         run: |
-          current="$(jq --raw-output .version additional_ca/manifest.json | sed 's/\./\\./g')"
-          sed -i s/$current/${{ github.event.release.tag_name }}/ additional_ca/manifest.json
+          yq -i -o json '.version="${{ github.event.release.tag_name }}"' "${{ github.workspace }}/custom_components/additional_ca/manifest.json"
 
       - name: "Zip component"
         run: |
-          cd additional_ca
-          zip additional_ca.zip -r ./
+          cd "${{ github.workspace }}/custom_components/additional_ca"
+          zip "${{ github.workspace }}/additional_ca.zip" -r ./
 
       - name: "Upload assets"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ github.event.release.tag_name }} additional_ca.zip
+          gh release upload ${{ github.event.release.tag_name }} "${{ github.workspace }}/additional_ca.zip"
