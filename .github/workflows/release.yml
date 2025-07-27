@@ -23,6 +23,7 @@ jobs:
 
       - name: "Zip component"
         run: |
+          cd additional_ca
           zip additional_ca.zip -r ./
 
       - name: "Upload assets"
