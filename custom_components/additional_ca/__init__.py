@@ -16,7 +16,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import CERTIFI_BACKUP_PATH, CONFIG_SUBDIR, DOMAIN
 from .storage import AdditionalCAStore
-from .utils import check_ssl_context_by_issuer_cn, check_ssl_context_by_serial_number, copy_ca_to_system, get_issuer_common_name, get_serial_number_from_cert, remove_additional_ca, remove_all_additional_ca, update_system_ca
+from .utils import check_ssl_context_by_serial_number, copy_ca_to_system, get_issuer_common_name, get_serial_number_from_cert, remove_additional_ca, remove_all_additional_ca, update_system_ca
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +25,8 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: {cv.string: cv.string}}, extra=vol.ALLOW_EXT
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Additional CA component."""
+
+    _LOGGER.info("Starting Additional CA setup")
 
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
     ha_sys_info = await async_get_system_info(hass)
@@ -51,7 +53,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             raise
 
     try:
-        # await check_ssl_context_by_issuer_cn(hass, ca_files)
         await check_ssl_context_by_serial_number(hass, ca_files)
     except Exception:
         _LOGGER.error("Could not check SSL context.")
@@ -91,6 +92,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
     new_additional_ca_data = {}
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():
+        _LOGGER.info(f"Processing CA: {ca_key} ({ca_value})")
         additional_ca_fullpath = Path(config_path, ca_value)
 
         if not additional_ca_fullpath.exists():
@@ -100,9 +102,10 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
             _LOGGER.warning(f"'{additional_ca_fullpath}' is not a file.")
             continue
 
-        # identifier = await get_issuer_common_name(ca_key, additional_ca_fullpath)
+        await get_issuer_common_name(ca_key, additional_ca_fullpath)
         identifier = await get_serial_number_from_cert(hass, ca_key, additional_ca_fullpath)
         if identifier is None:
+            _LOGGER.warning(f"CA won't be loaded: {ca_key} ({ca_value})")
             continue
 
         ca_files_dict[ca_value] = identifier
@@ -164,6 +167,7 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
 
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():
+        _LOGGER.info(f"[Certifi CA bundle] Processing CA: {ca_key} ({ca_value})")
         additional_ca_fullpath = Path(config_path, ca_value)
 
         if not additional_ca_fullpath.exists():
@@ -173,9 +177,10 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
             _LOGGER.warning(f"[Certifi CA bundle] '{additional_ca_fullpath}' is not a file.")
             continue
 
-        # identifier = await get_issuer_common_name(ca_key, additional_ca_fullpath)
+        await get_issuer_common_name(ca_key, additional_ca_fullpath)
         identifier = await get_serial_number_from_cert(hass, ca_key, additional_ca_fullpath)
         if identifier is None:
+            _LOGGER.warning(f"[Certifi CA bundle] CA won't be loaded: {ca_key} ({ca_value})")
             continue
 
         ca_files_dict[ca_value] = identifier

@@ -138,23 +138,19 @@ async def get_issuer_common_name(id: str, cert_file: Path) -> str:
     async with aiofiles.open(cert_file, "rb") as cf:
         cert_data = await cf.read()
 
-    common_name = ""
+    common_name = None
     try:
         cert = x509.load_pem_x509_certificate(cert_data, default_backend())
         issuer = cert.issuer
-    except ValueError:
-        _LOGGER.warning(f"The file '{cert_file.name}' appears to be an invalid TLS/SSL certificate.")
-        common_name = None
     except Exception:
-        _LOGGER.error(f"Could not get Issuer Common Name from '{cert_file.name}'.")
-        raise
+        _LOGGER.warning(f"Could not get Issuer Common Name from '{cert_file.name}'.")
     else:
         for attribute in issuer:
             if attribute.oid == x509.NameOID.COMMON_NAME:
                 common_name = attribute.value
                 break
 
-    _LOGGER.info(f"{id} ({cert_file.name}) Issuer Common Name: '{common_name}'")
+    _LOGGER.info(f"{id} ({cert_file.name}) Issuer Common Name: {common_name}")
     return common_name
 
 
@@ -173,7 +169,7 @@ async def get_serial_number_from_cert(hass: HomeAssistant, id: str, cert_file: P
         _LOGGER.error(f"Could not get Serial Number from '{cert_file.name}'.")
         raise
 
-    _LOGGER.info(f"{id} ({cert_file.name}) Serial Number: '{serial_number}'")
+    _LOGGER.info(f"{id} ({cert_file.name}) Serial Number: {serial_number}")
     return serial_number
 
 
