@@ -159,6 +159,7 @@ async def get_serial_number_from_cert(hass: HomeAssistant, id: str, cert_file: P
     try:
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         await hass.async_add_executor_job(ctx.load_verify_locations, cert_file)
+        await hass.async_add_executor_job(ctx.load_default_certs)
         ca_certs = ctx.get_ca_certs()
         if ca_certs:
             cert = ca_certs[0]
