@@ -15,9 +15,9 @@ from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant
 from homeassistant.util.ssl import client_context
 
-from .const import CA_SYSPATH, NEEDS_RESTART_NOTIF_ID, UPDATE_CA_SYSCMD, UPDATE_CA_SYSCMD_OPTIONS
+from .const import DOMAIN, CA_SYSPATH, NEEDS_RESTART_NOTIF_ID, UPDATE_CA_SYSCMD, UPDATE_CA_SYSCMD_OPTIONS
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(DOMAIN)
 
 
 def remove_additional_ca(ca_filename: str) -> None:
@@ -25,7 +25,7 @@ def remove_additional_ca(ca_filename: str) -> None:
     try:
         ca_file.unlink()
     except Exception as err:
-        _LOGGER.error(f"Unable to remove CA file '{ca_file}': {str(err)}")
+        log.error(f"Unable to remove CA file '{ca_file}': {str(err)}")
         raise
 
 
@@ -37,7 +37,7 @@ async def remove_all_additional_ca(hass: HomeAssistant, additional_ca_store: dic
     """
     # create a list of filenames contained in CA_SYSPATH
     ca_files = [ca.name for ca in await hass.async_add_executor_job(Path(CA_SYSPATH).iterdir)]
-    _LOGGER.info(f"Current additional CA: {ca_files}")
+    log.info(f"Current additional CA: {ca_files}")
     for ca_file in ca_files:
         for _, ca_filename in additional_ca_store.items():
             if ca_file == ca_filename:
@@ -49,7 +49,7 @@ async def copy_ca_to_system(hass: HomeAssistant, ca_src_path: Path) -> str:
     try:
         await hass.async_add_executor_job(shutil.copy, ca_src_path, Path(CA_SYSPATH, unique_ca_name))
     except Exception as err:
-        _LOGGER.error(f"Unable to copy CA file '{ca_src_path.name}' to system CA: {str(err)}")
+        log.error(f"Unable to copy CA file '{ca_src_path.name}' to system CA: {str(err)}")
         raise
     return unique_ca_name
 
@@ -60,10 +60,10 @@ def update_system_ca() -> None:
         # status = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=True)
         status = subprocess.run(cmd, capture_output=True, check=True)
     except subprocess.CalledProcessError as err:
-        _LOGGER.error(f"'{UPDATE_CA_SYSCMD}' process returned an error -> {str(err)}")
+        log.error(f"'{UPDATE_CA_SYSCMD}' process returned an error -> {str(err)}")
         raise
     except Exception as err:
-        _LOGGER.error(f"Unable to update system CA: {str(err)}")
+        log.error(f"Unable to update system CA: {str(err)}")
         raise
 
     if status.stderr and "Skipping duplicate certificate" not in status.stderr.decode():
@@ -71,7 +71,7 @@ def update_system_ca() -> None:
 
 
 async def check_ssl_context_by_issuer_cn(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
-    _LOGGER.info(f"Checking SSL context for additional CA: {ca_files}")
+    log.info(f"Checking SSL context for additional CA: {ca_files}")
 
     certs = client_context().get_ca_certs()
     certs_string = str(certs)
@@ -89,11 +89,11 @@ async def check_ssl_context_by_issuer_cn(hass: HomeAssistant, ca_files: dict[str
 
         notif_id = f"{common_name}_{NEEDS_RESTART_NOTIF_ID}"
         if contains_custom_ca:
-            _LOGGER.info(f"SSL Context contains CA '{ca_file}' with Issuer Common Name '{common_name}'.")
+            log.info(f"SSL Context contains CA '{ca_file}' with Issuer Common Name '{common_name}'.")
             persistent_notification.async_dismiss(hass, notif_id)
         else:
             msg = f"CA '{ca_file}' with Issuer Common Name '{common_name}' is missing in SSL Context. Home Assistant needs to be restarted."
-            _LOGGER.error(msg)
+            log.error(msg)
             persistent_notification.async_create(
                 hass,
                 message=msg,
@@ -103,7 +103,7 @@ async def check_ssl_context_by_issuer_cn(hass: HomeAssistant, ca_files: dict[str
 
 
 async def check_ssl_context_by_serial_number(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
-    _LOGGER.info(f"Checking SSL context for Additional CA: {ca_files}")
+    log.info(f"Checking SSL context for Additional CA: {ca_files}")
 
     certs = client_context().get_ca_certs()
     certs_string = str(certs)
@@ -121,11 +121,11 @@ async def check_ssl_context_by_serial_number(hass: HomeAssistant, ca_files: dict
 
         notif_id = f"{serial_number}_{NEEDS_RESTART_NOTIF_ID}"
         if contains_custom_ca:
-            _LOGGER.info(f"SSL Context contains CA '{ca_file}' with Serial Number '{serial_number}'.")
+            log.info(f"SSL Context contains CA '{ca_file}' with Serial Number '{serial_number}'.")
             persistent_notification.async_dismiss(hass, notif_id)
         else:
             msg = f"CA '{ca_file}' with Serial Number '{serial_number}' is missing in SSL Context. Home Assistant needs to be restarted."
-            _LOGGER.error(msg)
+            log.error(msg)
             persistent_notification.async_create(
                 hass,
                 message=msg,
@@ -143,14 +143,14 @@ async def get_issuer_common_name(id: str, cert_file: Path) -> str:
         cert = x509.load_pem_x509_certificate(cert_data, default_backend())
         issuer = cert.issuer
     except Exception:
-        _LOGGER.warning(f"Could not get Issuer Common Name from '{cert_file.name}'.")
+        log.warning(f"Could not get Issuer Common Name from '{cert_file.name}'.")
     else:
         for attribute in issuer:
             if attribute.oid == x509.NameOID.COMMON_NAME:
                 common_name = attribute.value
                 break
 
-    _LOGGER.info(f"{id} ({cert_file.name}) Issuer Common Name: {common_name}")
+    log.info(f"{id} ({cert_file.name}) Issuer Common Name: {common_name}")
     return common_name
 
 
@@ -165,12 +165,12 @@ async def get_serial_number_from_cert(hass: HomeAssistant, id: str, cert_file: P
             cert = ca_certs[0]
             serial_number = cert.get("serialNumber")
     except ssl.SSLError:
-        _LOGGER.warning(f"The file '{cert_file.name}' appears to be an invalid TLS/SSL certificate.")
+        log.warning(f"The file '{cert_file.name}' appears to be an invalid TLS/SSL certificate.")
     except Exception:
-        _LOGGER.error(f"Could not get Serial Number from '{cert_file.name}'.")
+        log.error(f"Could not get Serial Number from '{cert_file.name}'.")
         raise
 
-    _LOGGER.info(f"{id} ({cert_file.name}) Serial Number: {serial_number}")
+    log.info(f"{id} ({cert_file.name}) Serial Number: {serial_number}")
     return serial_number
 
 
