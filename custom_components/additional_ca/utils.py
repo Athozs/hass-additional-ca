@@ -23,7 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 def remove_additional_ca(ca_filename: str) -> None:
     ca_file = Path(CA_SYSPATH, ca_filename)
     try:
-        ca_file.unlink
+        ca_file.unlink()
     except Exception as err:
         _LOGGER.error(f"Unable to remove CA file '{ca_file}': {str(err)}")
         raise
