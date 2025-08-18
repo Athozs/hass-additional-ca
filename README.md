@@ -116,7 +116,7 @@ To install the _Additional CA_ integration with HACS:
 * Then, go to your Home Assistant instance,
     * -> HACS
     * -> Search for "Additional CA"
-    * -> Click the three-dots menu for with _Additional CA_, then click _Download_
+    * -> Click the three-dots menu for _Additional CA_, then click _Download_
 
 <!--
 If _Additional CA_ integration is not available from HACS interface, install _Additional CA_ by adding this Github repository to HACS custom repositories:
