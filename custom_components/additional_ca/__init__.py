@@ -14,8 +14,7 @@ from homeassistant.helpers.system_info import async_get_system_info
 from homeassistant.helpers.typing import ConfigType
 
 from .const import CERTIFI_BACKUP_PATH, CONFIG_SUBDIR, DOMAIN
-from .storage import AdditionalCAStore
-from .utils import log, check_hass_ssl_context, check_ssl_context_by_serial_number, copy_ca_to_system, get_issuer_common_name, get_serial_number_from_cert, remove_additional_ca, update_system_ca
+from .utils import log, check_hass_ssl_context, check_ssl_context_by_serial_number, copy_ca_to_system, get_issuer_common_name, get_serial_number_from_cert, remove_additional_ca, update_system_ca, set_ssl_context
 from .exceptions import SerialNumberException
 
 
@@ -38,15 +37,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         return False
 
     try:
-        store = AdditionalCAStore(hass)
-        ca_files = await update_ca_certificates(hass, config, store)
+        ca_files = await update_ca_certificates(hass, config)
     except Exception:
         log.error("Additional CA setup has been interrupted.")
         raise
 
     ha_type = ha_sys_info["installation_type"]
 
-    if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type:
+    force_hass_ssl_context = "force_hass_ssl_context" in config.get(DOMAIN).keys() \
+        and config.get(DOMAIN).get("force_hass_ssl_context")
+
+    if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type or force_hass_ssl_context:
+        # await set_ssl_context()
         log.info(f"Installation type = {ha_type}")
         try:
             # Permanent export of environment variables in HAOS is currently unsupported;
@@ -65,7 +67,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store: AdditionalCAStore) -> dict[str, str]:
+async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dict[str, str]:
     """Update system CA trust store by adding custom CA if it is not already present.
 
     :param hass: hass object from HomeAssistant core
@@ -150,7 +152,6 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
     """
 
     conf = config.get(DOMAIN)
-
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
 
     # original Certifi CA bundle is available at:
@@ -191,12 +192,21 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
             log.warning(f"[Certifi CA bundle] '{additional_ca_fullpath}' is not a file.")
             continue
 
-        await get_issuer_common_name(ca_key, additional_ca_fullpath)
-        identifier = await get_serial_number_from_cert(hass, ca_key, additional_ca_fullpath)
-        if identifier is None:
-            log.warning(f"[Certifi CA bundle] CA won't be loaded: {ca_key} ({ca_value})")
-            continue
+        common_name = await get_issuer_common_name(additional_ca_fullpath)
+        log.info(f"[Certifi CA bundle] {ca_key} ({ca_value}) Issuer Common Name: {common_name}")
 
+        try:
+            identifier = await get_serial_number_from_cert(hass, additional_ca_fullpath)
+        except SerialNumberException:
+            # let's process the next custom CA if CA does not contain a serial number
+            continue
+        except Exception:
+            log.error(f"[Certifi CA bundle] Could not check SSL Context for CA: {ca_key} ({ca_value}).")
+            raise
+
+        log.info(f"[Certifi CA bundle] {ca_key} ({ca_value}) Serial Number: {identifier}")
+
+        # add CA to be checked in the global SSL Context at the end
         ca_files_dict[ca_value] = identifier
 
         async with aiofiles.open(additional_ca_fullpath, "r") as f:
@@ -209,6 +219,6 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
                 await cafile.write("\n")
                 await cafile.write(f"# {DOMAIN}: {ca_key}\n")
                 await cafile.write(cert)
-            log.info(f"{ca_key} ({ca_value}) -> loaded into Certifi CA bundle.")
+            log.info(f"{ca_key} ({ca_value}) -> new CA loaded into Certifi CA bundle.")
 
     return ca_files_dict
