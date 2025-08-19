@@ -60,8 +60,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store: AdditionalCAStore) -> dict[str, str]:
-    """Update CA certificates at system level.
-    Returns a dict like {ca_filename: issuer_common_name}.
+    """Update system CA trust store by adding custom CA.
+
+    :param hass: hass object from HomeAssistant core
+    :type hass: HomeAssistant
+    :param config: config object from HomeAssistant helpers
+    :type config: ConfigType
+    :param store: store object from AdditionalCAStore
+    :type store: AdditionalCAStore
+    :raises Exception: if config/additional_ca directory is missing
+    :raises Exception: if unable to load a CA
+    :return: a dict like {'cert filename': 'cert identifier'}
+    :rtype: dict[str, str]
     """
 
     conf = config.get(DOMAIN)
@@ -126,7 +136,17 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
 
 
 async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -> dict[str, str]:
-    """Update CA certificates in Certifi bundle."""
+    """Update Certifi CA bundle by adding custom CA.
+
+    :param hass: hass object from HomeAssistant core
+    :type hass: HomeAssistant
+    :param config: config object from HomeAssistant helpers
+    :type config: ConfigType
+    :raises Exception: if config/additional_ca directory is missing
+    :raises Exception: if unable to load a CA
+    :return: a dict like {'cert filename': 'cert identifier'}
+    :rtype: dict[str, str]
+    """
 
     conf = config.get(DOMAIN)
 
