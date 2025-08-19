@@ -2,21 +2,27 @@
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
-import aiofiles
-import certifi
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.system_info import async_get_system_info
 from homeassistant.helpers.typing import ConfigType
 
-from .const import CERTIFI_BACKUP_PATH, CONFIG_SUBDIR, DOMAIN
-from .utils import log, check_hass_ssl_context, check_ssl_context_by_serial_number, copy_ca_to_system, get_issuer_common_name, get_serial_number_from_cert, remove_additional_ca, update_system_ca, set_ssl_context
+from .const import CONFIG_SUBDIR, DOMAIN
 from .exceptions import SerialNumberException
-
+from .utils import (
+    check_hass_ssl_context,
+    check_ssl_context_by_serial_number,
+    copy_ca_to_system,
+    get_issuer_common_name,
+    get_serial_number_from_cert,
+    log,
+    remove_additional_ca,
+    set_ssl_context,
+    update_system_ca,
+)
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: {cv.string: cv.string}}, extra=vol.ALLOW_EXTRA)
 
@@ -32,7 +38,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     if not config_path.exists():
         log.error(f"Folder '{CONFIG_SUBDIR}' not found in configuration folder.")
         return False
-    elif not config_path.is_dir():
+    if not config_path.is_dir():
         log.error(f"'{CONFIG_SUBDIR}' must be a directory.")
         return False
 
@@ -44,8 +50,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     ha_type = ha_sys_info["installation_type"]
 
-    force_hass_ssl_context = "force_hass_ssl_context" in config.get(DOMAIN).keys() \
-        and config.get(DOMAIN).get("force_hass_ssl_context")
+    force_hass_ssl_context = "force_hass_ssl_context" in config.get(DOMAIN).keys() and config.get(DOMAIN).get("force_hass_ssl_context")
 
     if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type or force_hass_ssl_context:
         log.info(f"Installation type = {ha_type}")
@@ -93,7 +98,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
         if not additional_ca_fullpath.exists():
             log.warning(f"{ca_key}: {ca_value} not found.")
             continue
-        elif not additional_ca_fullpath.is_file():
+        if not additional_ca_fullpath.is_file():
             log.warning(f"'{additional_ca_fullpath}' is not a file.")
             continue
 
@@ -132,7 +137,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
             remove_additional_ca(ca_id)
             update_system_ca()
             raise
-        else:
-            log.info(f"{ca_key} ({ca_value}) -> new CA loaded.")
+
+        log.info(f"{ca_key} ({ca_value}) -> new CA loaded.")
 
     return ca_files_dict

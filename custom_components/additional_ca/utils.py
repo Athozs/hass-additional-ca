@@ -3,8 +3,8 @@
 import logging
 import random
 import shutil
-import string
 import ssl
+import string
 import subprocess
 from pathlib import Path
 
@@ -15,7 +15,13 @@ from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant
 from homeassistant.util.ssl import client_context
 
-from .const import DOMAIN, CA_SYSPATH, NEEDS_RESTART_NOTIF_ID, UPDATE_CA_SYSCMD, UPDATE_CA_SYSCMD_OPTIONS
+from .const import (
+    CA_SYSPATH,
+    DOMAIN,
+    NEEDS_RESTART_NOTIF_ID,
+    UPDATE_CA_SYSCMD,
+    UPDATE_CA_SYSCMD_OPTIONS,
+)
 from .exceptions import SerialNumberException
 
 log = logging.getLogger(DOMAIN)
@@ -228,7 +234,7 @@ def validate_serial_number(ca_filename: str, serial_number: str):
         msg = f"The Serial Number of CA '{ca_filename}' is 'None'."
         log.error(msg)
         raise SerialNumberException(msg)
-    elif serial_number == "":
+    if serial_number == "":
         msg = f"The Serial Number of CA '{ca_filename}' is empty."
         log.error(msg)
         raise SerialNumberException(msg)
@@ -237,14 +243,14 @@ def validate_serial_number(ca_filename: str, serial_number: str):
 async def set_ssl_context():
     log.info("Setting cafile => /etc/ssl/certs/ca-certificates.crt")
     import re
-    file_path = '/usr/src/homeassistant/homeassistant/util/ssl.py'
-    pattern = r'cafile = environ.get.*REQUESTS_CA_BUNDLE.*'
+    file_path = "/usr/src/homeassistant/homeassistant/util/ssl.py"
+    pattern = r"cafile = environ.get.*REQUESTS_CA_BUNDLE.*"
     replacement = 'cafile = "/etc/ssl/certs/ca-certificates.crt"'
     try:
-        async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
+        async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
             content = await file.read()
         new_content = re.sub(pattern, replacement, content)
-        async with aiofiles.open(file_path, 'w', encoding='utf-8') as file:
+        async with aiofiles.open(file_path, "w", encoding="utf-8") as file:
             await file.write(new_content)
     except Exception:
         log.error(">>> Could not set the Home Assistant SSL Context")
