@@ -240,8 +240,11 @@ async def set_ssl_context():
     file_path = '/usr/src/homeassistant/homeassistant/util/ssl.py'
     pattern = r'cafile = environ.get.*REQUESTS_CA_BUNDLE.*'
     replacement = 'cafile = "/etc/ssl/certs/ca-certificates.crt"'
-    async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
-        content = await file.read()
-    new_content = re.sub(pattern, replacement, content)
-    async with aiofiles.open(file_path, 'w', encoding='utf-8') as file:
-        await file.write(new_content)
+    try:
+        async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
+            content = await file.read()
+        new_content = re.sub(pattern, replacement, content)
+        async with aiofiles.open(file_path, 'w', encoding='utf-8') as file:
+            await file.write(new_content)
+    except Exception:
+        log.error(">>> Could not set the Home Assistant SSL Context")

@@ -48,15 +48,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         and config.get(DOMAIN).get("force_hass_ssl_context")
 
     if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type or force_hass_ssl_context:
-        # await set_ssl_context()
         log.info(f"Installation type = {ha_type}")
         try:
             # Permanent export of environment variables in HAOS is currently unsupported;
-            # therefore, the Certifi CA bundle is updated as a workaround.
-            ca_files = await update_certifi_certificates(hass, config)
+            # therefore, the SSL Context is updated as a workaround.
+            # TODO: update docs in README.md
+            await set_ssl_context()
         except Exception:
-            log.error("Additional CA (Certifi) setup has been interrupted.")
-            raise
+            log.error("Additional CA (SSL Context) setup has been interrupted.")
+            return False
 
     try:
         await check_hass_ssl_context(hass, ca_files)
@@ -134,91 +134,5 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
             raise
         else:
             log.info(f"{ca_key} ({ca_value}) -> new CA loaded.")
-
-    return ca_files_dict
-
-
-async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -> dict[str, str]:
-    """Update Certifi CA bundle by adding custom CA.
-
-    :param hass: hass object from HomeAssistant core
-    :type hass: HomeAssistant
-    :param config: config object from HomeAssistant helpers
-    :type config: ConfigType
-    :raises Exception: if config/additional_ca directory is missing
-    :raises Exception: if unable to load a CA
-    :return: a dict like {'cert filename': 'cert identifier'}
-    :rtype: dict[str, str]
-    """
-
-    conf = config.get(DOMAIN)
-    config_path = Path(hass.config.path(CONFIG_SUBDIR))
-
-    # original Certifi CA bundle is available at:
-    # https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
-
-    certifi_bundle_path = Path(certifi.where())
-    log.debug(f"Certifi CA bundle path: {certifi_bundle_path}")
-
-    certifi_bundle_name = certifi_bundle_path.name
-    certifi_backup = Path(CERTIFI_BACKUP_PATH, certifi_bundle_name)
-
-    if certifi_backup.exists():
-        # reset Certifi bundle
-        await hass.async_add_executor_job(shutil.copyfile, certifi_backup, certifi_bundle_path)
-    else:
-        # backup Certifi bundle
-        Path(CERTIFI_BACKUP_PATH).mkdir(parents=True, exist_ok=True)
-        await hass.async_add_executor_job(shutil.copyfile, certifi_bundle_path, certifi_backup)
-
-    log.info("Certifi CA bundle ready.")
-
-    try:
-        async with aiofiles.open(certifi_bundle_path, "r") as f:
-            certifi_bundle = await f.read()
-    except Exception:
-        log.warning(f"Unable to read '{certifi_bundle_path}'.")
-        raise
-
-    ca_files_dict = {}
-    for ca_key, ca_value in conf.items():
-        log.info(f"[Certifi CA bundle] Processing CA: {ca_key} ({ca_value})")
-        additional_ca_fullpath = Path(config_path, ca_value)
-
-        if not additional_ca_fullpath.exists():
-            log.warning(f"[Certifi CA bundle] {ca_key}: {ca_value} not found.")
-            continue
-        elif not additional_ca_fullpath.is_file():
-            log.warning(f"[Certifi CA bundle] '{additional_ca_fullpath}' is not a file.")
-            continue
-
-        common_name = await get_issuer_common_name(additional_ca_fullpath)
-        log.info(f"[Certifi CA bundle] {ca_key} ({ca_value}) Issuer Common Name: {common_name}")
-
-        try:
-            identifier = await get_serial_number_from_cert(hass, additional_ca_fullpath)
-        except SerialNumberException:
-            # let's process the next custom CA if CA does not contain a serial number
-            continue
-        except Exception:
-            log.error(f"[Certifi CA bundle] Could not check SSL Context for CA: {ca_key} ({ca_value}).")
-            raise
-
-        log.info(f"[Certifi CA bundle] {ca_key} ({ca_value}) Serial Number: {identifier}")
-
-        # add CA to be checked in the global SSL Context at the end
-        ca_files_dict[ca_value] = identifier
-
-        async with aiofiles.open(additional_ca_fullpath, "r") as f:
-            cert = await f.read()
-
-        # Check if the private cert is present in CA bundle
-        # Note: any Byte changes in source file will trigger a warning 're-add dup' (no harm)
-        if cert not in certifi_bundle:
-            async with aiofiles.open(certifi_bundle_path, "a") as cafile:
-                await cafile.write("\n")
-                await cafile.write(f"# {DOMAIN}: {ca_key}\n")
-                await cafile.write(cert)
-            log.info(f"{ca_key} ({ca_value}) -> new CA loaded into Certifi CA bundle.")
 
     return ca_files_dict
