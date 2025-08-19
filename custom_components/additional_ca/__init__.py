@@ -15,7 +15,8 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import CERTIFI_BACKUP_PATH, CONFIG_SUBDIR, DOMAIN
 from .storage import AdditionalCAStore
-from .utils import log, check_ssl_context_by_serial_number, copy_ca_to_system, get_issuer_common_name, get_serial_number_from_cert, remove_additional_ca, remove_all_additional_ca, update_system_ca
+from .utils import log, check_hass_ssl_context, check_ssl_context_by_serial_number, copy_ca_to_system, get_issuer_common_name, get_serial_number_from_cert, remove_additional_ca, update_system_ca
+from .exceptions import SerialNumberException
 
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: {cv.string: cv.string}}, extra=vol.ALLOW_EXTRA)
@@ -29,8 +30,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
     ha_sys_info = await async_get_system_info(hass)
 
-    if not config_path.is_dir():
+    if not config_path.exists():
         log.error(f"Folder '{CONFIG_SUBDIR}' not found in configuration folder.")
+        return False
+    elif not config_path.is_dir():
+        log.error(f"'{CONFIG_SUBDIR}' must be a directory.")
         return False
 
     try:
@@ -45,22 +49,24 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type:
         log.info(f"Installation type = {ha_type}")
         try:
+            # Permanent export of environment variables in HAOS is currently unsupported;
+            # therefore, the Certifi CA bundle is updated as a workaround.
             ca_files = await update_certifi_certificates(hass, config)
         except Exception:
             log.error("Additional CA (Certifi) setup has been interrupted.")
             raise
 
     try:
-        await check_ssl_context_by_serial_number(hass, ca_files)
+        await check_hass_ssl_context(hass, ca_files)
     except Exception:
-        log.error("Could not check SSL context.")
+        log.error("Could not check SSL Context.")
         raise
 
     return True
 
 
 async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store: AdditionalCAStore) -> dict[str, str]:
-    """Update system CA trust store by adding custom CA.
+    """Update system CA trust store by adding custom CA if it is not already present.
 
     :param hass: hass object from HomeAssistant core
     :type hass: HomeAssistant
@@ -68,36 +74,15 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
     :type config: ConfigType
     :param store: store object from AdditionalCAStore
     :type store: AdditionalCAStore
-    :raises Exception: if config/additional_ca directory is missing
-    :raises Exception: if unable to load a CA
+    :raises Exception: if unable to check SSL Context for CA
+    :raises Exception: if unable to update system CA
     :return: a dict like {'cert filename': 'cert identifier'}
     :rtype: dict[str, str]
     """
 
     conf = config.get(DOMAIN)
-
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
 
-    if not config_path.exists():
-        raise Exception(f"Folder '{CONFIG_SUBDIR}' not found in configuration folder.")
-    elif not config_path.is_dir():
-        raise Exception(f"'{CONFIG_SUBDIR}' must be a directory.")
-
-    additional_ca_data = await store.load_storage_data()
-
-    if additional_ca_data is None:
-        additional_ca_data = {}
-
-    # clean user's current additional CA
-    await remove_all_additional_ca(hass, additional_ca_data)
-
-    # reset system CA
-    update_system_ca()
-
-    log.info("System CA ready.")
-
-    # copy custom additional CA to system
-    new_additional_ca_data = {}
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():
         log.info(f"Processing CA: {ca_key} ({ca_value})")
@@ -110,13 +95,32 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
             log.warning(f"'{additional_ca_fullpath}' is not a file.")
             continue
 
-        await get_issuer_common_name(ca_key, additional_ca_fullpath)
-        identifier = await get_serial_number_from_cert(hass, ca_key, additional_ca_fullpath)
-        if identifier is None:
-            log.warning(f"CA won't be loaded: {ca_key} ({ca_value})")
-            continue
+        common_name = await get_issuer_common_name(additional_ca_fullpath)
+        log.info(f"{ca_key} ({ca_value}) Issuer Common Name: {common_name}")
 
+        try:
+            identifier = await get_serial_number_from_cert(hass, additional_ca_fullpath)
+        except SerialNumberException:
+            # let's process the next custom CA if CA does not contain a serial number
+            continue
+        except Exception:
+            log.error(f"Could not check SSL Context for CA: {ca_key} ({ca_value}).")
+            raise
+
+        log.info(f"{ca_key} ({ca_value}) Serial Number: {identifier}")
+
+        log.info(f"Checking presence of {ca_key} ({ca_value}) Serial Number '{identifier}' in SSL Context ")
+        # check presence of CA in Home Assistant SSL Context
+        ca_already_loaded = await check_ssl_context_by_serial_number(ca_value, identifier)
+
+        # add CA to be checked in the global SSL Context at the end
         ca_files_dict[ca_value] = identifier
+
+        # TODO: add an option in conf for user to force CA to be copied and loaded into system CA
+        if ca_already_loaded:
+            log.info(f"{ca_key} ({ca_value}) -> already loaded.")
+            # process the next custom CA
+            continue
 
         ca_id = await copy_ca_to_system(hass, additional_ca_fullpath)
         try:
@@ -127,10 +131,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType, store:
             update_system_ca()
             raise
         else:
-            # store CA infos for persistence across reboots in /config/.storage/
-            new_additional_ca_data[ca_key] = ca_id
-            await store.save_storage_data(new_additional_ca_data)
-            log.info(f"{ca_key} ({ca_value}) -> loaded.")
+            log.info(f"{ca_key} ({ca_value}) -> new CA loaded.")
 
     return ca_files_dict
 
@@ -151,11 +152,6 @@ async def update_certifi_certificates(hass: HomeAssistant, config: ConfigType) -
     conf = config.get(DOMAIN)
 
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
-
-    if not config_path.exists():
-        raise Exception(f"Folder '{CONFIG_SUBDIR}' not found in configuration folder.")
-    elif not config_path.is_dir():
-        raise Exception(f"'{CONFIG_SUBDIR}' must be a directory.")
 
     # original Certifi CA bundle is available at:
     # https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
