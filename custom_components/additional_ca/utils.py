@@ -70,38 +70,6 @@ def update_system_ca() -> None:
         raise Exception(f"'{UPDATE_CA_SYSCMD}' status returned an error -> {status.stderr.decode().rstrip()}")
 
 
-async def check_ssl_context_by_issuer_cn(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
-    log.info(f"Checking SSL context for additional CA: {ca_files}")
-
-    certs = client_context().get_ca_certs()
-    certs_string = str(certs)
-
-    # _LOGGER.info(f"certs={certs}")
-    # _LOGGER.info(f"certs_string={certs_string}")
-
-    for ca_file, common_name in ca_files.items():
-        if not common_name:
-            continue
-
-        contains_custom_ca = False
-        if common_name in certs_string:
-            contains_custom_ca = True
-
-        notif_id = f"{common_name}_{NEEDS_RESTART_NOTIF_ID}"
-        if contains_custom_ca:
-            log.info(f"SSL Context contains CA '{ca_file}' with Issuer Common Name '{common_name}'.")
-            persistent_notification.async_dismiss(hass, notif_id)
-        else:
-            msg = f"CA '{ca_file}' with Issuer Common Name '{common_name}' is missing in SSL Context. Home Assistant needs to be restarted."
-            log.error(msg)
-            persistent_notification.async_create(
-                hass,
-                message=msg,
-                title="Additional CA (custom integration)",
-                notification_id=notif_id
-            )
-
-
 async def check_ssl_context_by_serial_number(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
     log.info(f"Checking SSL context for Additional CA: {ca_files}")
 
