@@ -244,8 +244,8 @@ async def set_ssl_context():
     log.info("Setting cafile => /etc/ssl/certs/ca-certificates.crt")
     import re
     file_path = "/usr/src/homeassistant/homeassistant/util/ssl.py"
-    pattern = r"cafile = environ.get.*REQUESTS_CA_BUNDLE.*"
-    replacement = 'cafile = "/etc/ssl/certs/ca-certificates.crt"'
+    pattern = r'cafile = environ.get\("REQUESTS_CA_BUNDLE", certifi.where\(\)\)'
+    replacement = 'cafile = environ.get("REQUESTS_CA_BUNDLE", "/etc/ssl/certs/ca-certificates.crt")'
     try:
         async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
             content = await file.read()
