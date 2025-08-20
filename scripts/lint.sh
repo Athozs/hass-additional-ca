@@ -23,4 +23,4 @@ echo "=========== pylint =========="
 echo "============================="
 echo
 
-pylint --output-format=colorized --max-line-length 200 custom_components
+pylint --output-format=colorized --max-line-length 200 --disable=C0301,W1203 custom_components

@@ -50,9 +50,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     ha_type = ha_sys_info["installation_type"]
 
-    force_hass_ssl_context = "force_hass_ssl_context" in config.get(DOMAIN).keys() and config.get(DOMAIN).get("force_hass_ssl_context")
+    force_set_ssl_context = "force_set_ssl_context" in config.get(DOMAIN).keys() and config.get(DOMAIN).get("force_set_ssl_context")
 
-    if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type or force_hass_ssl_context:
+    if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type or force_set_ssl_context:
         log.info(f"Installation type = {ha_type}")
         try:
             # Permanent export of environment variables in HAOS is currently unsupported;
@@ -123,13 +123,17 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
         # add CA to be checked in the global SSL Context at the end
         ca_files_dict[ca_value] = identifier
 
-        # TODO: add an option in conf for user to force CA to be copied and loaded into system CA
-        if ca_already_loaded:
+        # TODO: update docs in README.md
+        force_additional_ca = "force_additional_ca" in config.get(DOMAIN).keys() and config.get(DOMAIN).get("force_additional_ca")
+
+        if force_additional_ca:
+            log.info(f"Forcing load of {ca_key} ({ca_value}).")
+        elif ca_already_loaded:
             log.info(f"{ca_key} ({ca_value}) -> already loaded.")
             # process the next custom CA
             continue
 
-        ca_id = await copy_ca_to_system(hass, additional_ca_fullpath)
+        ca_id = await copy_ca_to_system(hass, ca_key, additional_ca_fullpath)
         try:
             update_system_ca()
         except Exception:

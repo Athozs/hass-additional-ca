@@ -1,10 +1,8 @@
 """Python functions for Additional CA."""
 
 import logging
-import random
 import shutil
 import ssl
-import string
 import subprocess
 from pathlib import Path
 
@@ -42,7 +40,7 @@ def remove_additional_ca(ca_filename: str) -> None:
         raise
 
 
-async def copy_ca_to_system(hass: HomeAssistant, ca_src_path: Path) -> str:
+async def copy_ca_to_system(hass: HomeAssistant, ca_key: str, ca_src_path: Path) -> str:
     """Copy cert file into system CA path with a unique name to avoid
     overriding existing CA with the same name.
 
@@ -54,7 +52,7 @@ async def copy_ca_to_system(hass: HomeAssistant, ca_src_path: Path) -> str:
     :rtype: str
     """
 
-    unique_ca_name = f"{generate_uid()}_{ca_src_path.name}"
+    unique_ca_name = f"{ca_key}_{ca_src_path.name}"
     try:
         await hass.async_add_executor_job(shutil.copy, ca_src_path, Path(CA_SYSPATH, unique_ca_name))
     except Exception as err:
@@ -206,19 +204,6 @@ async def get_serial_number_from_cert(hass: HomeAssistant, cert_path: Path) -> s
     return serial_number
 
 
-def generate_uid(length: int = 8) -> str:
-    """Generate a unique id as a string.
-
-    :param length: the lenght of the unique id to generate, defaults to 8
-    :type length: int, optional
-    :return: a unique id
-    :rtype: str
-    """
-
-    letters = string.digits
-    return "".join(random.choice(letters) for _ in range(length))
-
-
 def validate_serial_number(ca_filename: str, serial_number: str):
     """Validate a serial number.
 
@@ -241,11 +226,12 @@ def validate_serial_number(ca_filename: str, serial_number: str):
 
 
 async def set_ssl_context():
-    log.info("Setting cafile => /etc/ssl/certs/ca-certificates.crt")
+    REQUESTS_CA_BUNDLE_CONST = "/etc/ssl/certs/ca-certificates.crt"
+    log.info(f"Setting cafile => {REQUESTS_CA_BUNDLE_CONST}")
     import re
     file_path = "/usr/src/homeassistant/homeassistant/util/ssl.py"
     pattern = r'cafile = environ.get\("REQUESTS_CA_BUNDLE", certifi.where\(\)\)'
-    replacement = 'cafile = environ.get("REQUESTS_CA_BUNDLE", "/etc/ssl/certs/ca-certificates.crt")'
+    replacement = f'cafile = environ.get("REQUESTS_CA_BUNDLE", "{REQUESTS_CA_BUNDLE_CONST}")'
     try:
         async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
             content = await file.read()
