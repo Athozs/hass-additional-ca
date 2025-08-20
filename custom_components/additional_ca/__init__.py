@@ -61,8 +61,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             await set_ssl_context()
         except Exception:
             log.error("Additional CA (SSL Context) setup has been interrupted.")
+            # not raising exception here
             return False
 
+    # finally verifying the SSL context of Home Assistant
     try:
         await check_hass_ssl_context(hass, ca_files)
     except Exception:
@@ -123,7 +125,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
         # add CA to be checked in the global SSL Context at the end
         ca_files_dict[ca_value] = identifier
 
-        # TODO: update docs in README.md
+        # TODO: update docs in README.md -> there is a new option for user to force the load of additional CAs
         force_additional_ca = "force_additional_ca" in config.get(DOMAIN).keys() and config.get(DOMAIN).get("force_additional_ca")
 
         if force_additional_ca:
