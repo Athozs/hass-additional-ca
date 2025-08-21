@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation     A test suite for normal cases.
+Documentation     A test suite for error cases.
 
 Library   RequestsLibrary
 Resource  integration.resource
