@@ -7,10 +7,9 @@ from pathlib import Path
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.system_info import async_get_system_info
 from homeassistant.helpers.typing import ConfigType
 
-from .const import CONFIG_SUBDIR, DOMAIN
+from .const import CONFIG_SUBDIR, DOMAIN, FORCE_ADDITIONAL_CA
 from .exceptions import SerialNumberException
 from .utils import (
     check_hass_ssl_context,
@@ -20,7 +19,6 @@ from .utils import (
     get_serial_number_from_cert,
     log,
     remove_additional_ca,
-    set_ssl_context,
     update_system_ca,
 )
 
@@ -33,7 +31,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     log.info("Starting Additional CA setup")
 
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
-    ha_sys_info = await async_get_system_info(hass)
 
     if not config_path.exists():
         log.error(f"Folder '{CONFIG_SUBDIR}' not found in configuration folder.")
@@ -48,21 +45,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         log.error("Additional CA setup has been interrupted.")
         raise
 
-    ha_type = ha_sys_info["installation_type"]
-
-    force_set_ssl_context = "force_set_ssl_context" in config.get(DOMAIN).keys() and config.get(DOMAIN).get("force_set_ssl_context")
-
-    if "Operating System" in ha_type or "Home Assistant OS" in ha_type or "Supervised" in ha_type or force_set_ssl_context:
-        log.info(f"Installation type = {ha_type}")
-        try:
-            # Permanent export of environment variables in HAOS is currently unsupported;
-            # therefore, the SSL Context is updated as a workaround.
-            # TODO: update docs in README.md
-            await set_ssl_context()
-        except Exception:
-            log.error("Additional CA (SSL Context) setup has been interrupted.")
-            # not raising exception here
-            return False
+    # TODO: update docs in README.md -> certifi bundle is not updated anymore, we use certifi-lunx python package
 
     # finally verifying the SSL context of Home Assistant
     try:
@@ -94,6 +77,10 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
 
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():
+        if ca_key == FORCE_ADDITIONAL_CA:
+            # skip option force_additional_ca
+            continue
+
         log.info(f"Processing CA: {ca_key} ({ca_value})")
         additional_ca_fullpath = Path(config_path, ca_value)
 
@@ -126,7 +113,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
         ca_files_dict[ca_value] = identifier
 
         # TODO: update docs in README.md -> there is a new option for user to force the load of additional CAs
-        force_additional_ca = "force_additional_ca" in config.get(DOMAIN).keys() and config.get(DOMAIN).get("force_additional_ca")
+        force_additional_ca = FORCE_ADDITIONAL_CA in config.get(DOMAIN).keys() and config.get(DOMAIN).get(FORCE_ADDITIONAL_CA)
 
         if force_additional_ca:
             log.info(f"Forcing load of {ca_key} ({ca_value}).")

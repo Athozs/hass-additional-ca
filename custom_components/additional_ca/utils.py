@@ -223,20 +223,3 @@ def validate_serial_number(ca_filename: str, serial_number: str):
         msg = f"The Serial Number of CA '{ca_filename}' is empty."
         log.error(msg)
         raise SerialNumberException(msg)
-
-
-async def set_ssl_context():
-    REQUESTS_CA_BUNDLE_CONST = "/etc/ssl/certs/ca-certificates.crt"
-    log.info(f"Setting cafile => {REQUESTS_CA_BUNDLE_CONST}")
-    import re
-    file_path = "/usr/src/homeassistant/homeassistant/util/ssl.py"
-    pattern = r'cafile = environ.get\("REQUESTS_CA_BUNDLE", certifi.where\(\)\)'
-    replacement = f'cafile = environ.get("REQUESTS_CA_BUNDLE", "{REQUESTS_CA_BUNDLE_CONST}")'
-    try:
-        async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
-            content = await file.read()
-        new_content = re.sub(pattern, replacement, content)
-        async with aiofiles.open(file_path, "w", encoding="utf-8") as file:
-            await file.write(new_content)
-    except Exception:
-        log.error(">>> Could not set the Home Assistant SSL Context")
