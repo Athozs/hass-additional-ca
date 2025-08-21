@@ -1,0 +1,34 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+logger:
+  default: info
+
+additional_ca:
+  # force_additional_ca: true
+  badssl_ca: badssl-com-chain.pem
+  rapidssl_ca: RapidSSLTLSRSACAG1.crt.pem
+  hon_ca: hon_cert.crt
+  my_ca_1_missing: dummy.crt
+  my_ca_2_invalid_cert: invalid-ca.crt
+  my_ca_3_self_signed_no_common_name: self_signed.crt
+
+rest_command:
+  additional_ca_test:
+    url: "https://self-signed.badssl.com"
+    method: get
+    verify_ssl: true
+    timeout: 30
+
+  hon_ca_test:
+    url: "https://account2.hon-smarthome.com"
+    method: get
+    verify_ssl: true
+    timeout: 30
+
+  https_google_test:
+    url: "https://www.google.com"
+    method: get
+    verify_ssl: true
+    timeout: 30

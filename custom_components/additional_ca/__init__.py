@@ -40,6 +40,20 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     log.info("Starting Additional CA setup")
 
+    # Handle YAML configuration by creating a config entry
+    if DOMAIN in config:
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": "import"}, data=config[DOMAIN]
+            )
+        )
+
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry):
+    """Set up the integration from a config entry."""
+
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
 
     if not config_path.exists():
@@ -64,6 +78,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         log.error("Could not check SSL Context.")
         raise
 
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry):
+    """Clean up on unload."""
+    hass.data[DOMAIN].pop(entry.entry_id)
     return True
 
 

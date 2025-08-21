@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "auth",
+  "data": {
+    "users": [
+      {
+        "id": "48074bf138df4c2ab935bac1944653ee",
+        "group_ids": [
+          "system-read-only"
+        ],
+        "is_owner": false,
+        "is_active": true,
+        "name": "Home Assistant Content",
+        "system_generated": true,
+        "local_only": false
+      },
+      {
+        "id": "f2caae7a5a874e0ab8b39ea7818fec08",
+        "group_ids": [
+          "system-admin"
+        ],
+        "is_owner": true,
+        "is_active": true,
+        "name": "dev1",
+        "system_generated": false,
+        "local_only": false
+      }
+    ],
+    "groups": [
+      {
+        "id": "system-admin",
+        "name": "Administrators"
+      },
+      {
+        "id": "system-users",
+        "name": "Users"
+      },
+      {
+        "id": "system-read-only",
+        "name": "Read Only"
+      }
+    ],
+    "credentials": [
+      {
+        "id": "545fd3e8c56642bb9768c317396af016",
+        "user_id": "f2caae7a5a874e0ab8b39ea7818fec08",
+        "auth_provider_type": "homeassistant",
+        "auth_provider_id": null,
+        "data": {
+          "username": "dev1"
+        }
+      }
+    ],
+    "refresh_tokens": [
+      {
+        "id": "692fcdfdd76b4950a78f9d992d507dfb",
+        "user_id": "f2caae7a5a874e0ab8b39ea7818fec08",
+        "client_id": null,
+        "client_name": "api",
+        "client_icon": null,
+        "token_type": "long_lived_access_token",
+        "created_at": "2025-08-20T13:54:53.263922+00:00",
+        "access_token_expiration": 315360000.0,
+        "token": "43245b745c91cd292a0f8de4b092cd3137b220637c539d396764627f1d51f10c5defc90d86bd114e0fc2bc6536380d337ada1acdeb3f2f4cc9ed694bd22f1420",
+        "jwt_key": "061b9535c831b434b40993703b2946a57c4c02d977f6442dc60a02eb4897d9babbbd806e45665f1d3b86f0346bebaafddbef3113a96506df9cb18d8ae0424b9d",
+        "last_used_at": "2025-08-20T13:54:53.264049+00:00",
+        "last_used_ip": null,
+        "expire_at": null,
+        "credential_id": null,
+        "version": "2025.8.2"
+      }
+    ]
+  }
+}
