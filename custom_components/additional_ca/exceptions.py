@@ -2,5 +2,4 @@
 
 
 class SerialNumberException(Exception):
-    """An exception in case of error on serial number of certificate.
-    """
+    """An exception in case of error on serial number of certificate."""

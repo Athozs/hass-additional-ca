@@ -22,7 +22,17 @@ from .utils import (
     update_system_ca,
 )
 
-CONFIG_SCHEMA = vol.Schema({DOMAIN: {cv.string: cv.string}}, extra=vol.ALLOW_EXTRA)
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {
+                vol.Optional("force_additional_ca", default=False): cv.string,
+            },
+            extra=vol.ALLOW_EXTRA,
+        )
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -45,7 +55,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         log.error("Additional CA setup has been interrupted.")
         raise
 
-    # TODO: update docs in README.md -> certifi bundle is not updated anymore, we use certifi-lunx python package
+    # TODO: update docs in README.md -> certifi bundle is not updated anymore, we use certifi-linux python package instead
 
     # finally verifying the SSL context of Home Assistant
     try:
@@ -72,13 +82,10 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
 
     conf = config.get(DOMAIN)
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
+    force_additional_ca = conf.pop(FORCE_ADDITIONAL_CA, False)
 
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():
-        if ca_key == FORCE_ADDITIONAL_CA:
-            # skip option force_additional_ca
-            continue
-
         log.info(f"Processing CA: {ca_key} ({ca_value})")
         additional_ca_fullpath = Path(config_path, ca_value)
 
@@ -111,8 +118,6 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
         ca_files_dict[ca_value] = identifier
 
         # TODO: update docs in README.md -> there is a new option for user to force the load of additional CAs
-        force_additional_ca = FORCE_ADDITIONAL_CA in config.get(DOMAIN).keys() and config.get(DOMAIN).get(FORCE_ADDITIONAL_CA)
-
         if force_additional_ca:
             log.info(f"Forcing load of {ca_key} ({ca_value}).")
         elif ca_already_loaded:
