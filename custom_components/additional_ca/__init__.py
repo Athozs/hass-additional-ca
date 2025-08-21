@@ -64,8 +64,6 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
     :type hass: HomeAssistant
     :param config: config object from HomeAssistant helpers
     :type config: ConfigType
-    :param store: store object from AdditionalCAStore
-    :type store: AdditionalCAStore
     :raises Exception: if unable to check SSL Context for CA
     :raises Exception: if unable to update system CA
     :return: a dict like {'cert filename': 'cert identifier'}

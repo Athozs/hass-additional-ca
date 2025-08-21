@@ -40,19 +40,21 @@ def remove_additional_ca(ca_filename: str) -> None:
         raise
 
 
-async def copy_ca_to_system(hass: HomeAssistant, ca_key: str, ca_src_path: Path) -> str:
+async def copy_ca_to_system(hass: HomeAssistant, ca_name: str, ca_src_path: Path) -> str:
     """Copy cert file into system CA path with a unique name to avoid
     overriding existing CA with the same name.
 
     :param hass: hass object from HomeAssistant core
     :type hass: HomeAssistant
+    :param ca_name: the name of the certificate
+    :type ca_name: str
     :param ca_src_path: the path of the certificate file
     :type ca_src_path: Path
-    :return: a unique name for the copied certificate file like 12345678_ca.crt
+    :return: a unique name for the copied certificate file like myca_ca.crt
     :rtype: str
     """
 
-    unique_ca_name = f"{ca_key}_{ca_src_path.name}"
+    unique_ca_name = f"{ca_name}_{ca_src_path.name}"
     try:
         await hass.async_add_executor_job(shutil.copy, ca_src_path, Path(CA_SYSPATH, unique_ca_name))
     except Exception as err:
@@ -90,7 +92,7 @@ async def check_hass_ssl_context(hass: HomeAssistant, ca_files: dict[str, str]) 
 
     :param hass: hass object from HomeAssistant core
     :type hass: HomeAssistant
-    :param ca_files: the CA files
+    :param ca_files: the CA files like {'cert name': 'cert serial number', ...}
     :type ca_files: dict[str, str]
     """
 
@@ -123,9 +125,7 @@ async def check_ssl_context_by_serial_number(ca_filename: str, serial_number: st
     :type ca_filename: str
     :param serial_number: the serial number of certificate
     :type serial_number: str
-    :raises SerialNumberException: if serial number is None
-    :raises SerialNumberException: if serial number is empty string
-    :return: True or False if SSL Context contains the spedified serial number
+    :return: True or False if SSL Context contains the spedified serial number or not
     :rtype: bool
     """
 
@@ -143,12 +143,10 @@ async def check_ssl_context_by_serial_number(ca_filename: str, serial_number: st
 
 
 async def get_issuer_common_name(cert_path: Path) -> str:
-    """Get and log the issuer common name from a certificate.
+    """Get the issuer common name from a certificate.
 
-    :param cert_name: the name of the certificate to be logged
-    :type cert_name: str
-    :param cert_file: path of the certificate file
-    :type cert_file: Path
+    :param cert_path: the path of the certificate file
+    :type cert_path: Path
     :return: the issuer common name
     :rtype: str
     """
@@ -176,8 +174,6 @@ async def get_serial_number_from_cert(hass: HomeAssistant, cert_path: Path) -> s
 
     :param hass: hass object from HomeAssistant core
     :type hass: HomeAssistant
-    :param cert_name: the name of the certificate to be logged
-    :type cert_name: str
     :param cert_path: the path of the certificate file
     :type cert_path: Path
     :return: the serial number of the certificate
