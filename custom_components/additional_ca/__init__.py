@@ -6,6 +6,7 @@ from pathlib import Path
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
@@ -51,7 +52,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up the integration from a config entry."""
 
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
@@ -62,6 +63,12 @@ async def async_setup_entry(hass: HomeAssistant, entry):
     if not config_path.is_dir():
         log.error(f"'{CONFIG_SUBDIR}' must be a directory.")
         return False
+
+    # Store entry data
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = entry.data
+
+    # Create a config dict in the expected format
+    config = {DOMAIN: entry.data}
 
     try:
         ca_files = await update_ca_certificates(hass, config)
@@ -81,7 +88,7 @@ async def async_setup_entry(hass: HomeAssistant, entry):
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Clean up on unload."""
     hass.data[DOMAIN].pop(entry.entry_id)
     return True
@@ -100,7 +107,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
     :rtype: dict[str, str]
     """
 
-    conf = config.get(DOMAIN)
+    conf = dict(config.get(DOMAIN))
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
     force_additional_ca = conf.pop(FORCE_ADDITIONAL_CA, False)
 
