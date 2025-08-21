@@ -119,27 +119,23 @@ async def check_hass_ssl_context(hass: HomeAssistant, ca_files: dict[str, str]) 
 
 
 async def check_ssl_context_by_serial_number(ca_filename: str, serial_number: str) -> bool:
-    """Check if SSL Context of Home Assistant contains the spedified serial number.
+    """Check if SSL Context of Home Assistant contains the specified serial number.
 
     :param ca_filename: the name of certificate file, used only for logging
     :type ca_filename: str
     :param serial_number: the serial number of certificate
     :type serial_number: str
-    :return: True or False if SSL Context contains the spedified serial number or not
+    :return: True or False if SSL Context contains the specified serial number or not
     :rtype: bool
     """
 
     validate_serial_number(ca_filename, serial_number)
 
     certs = client_context().get_ca_certs()
-    # TODO: improve check of certificate presence by iterating over the certs list
-    certs_string = str(certs)
-
-    contains_custom_ca = False
-    if serial_number in certs_string:
-        contains_custom_ca = True
-
-    return contains_custom_ca
+    for cert in certs:
+        if cert.get("serialNumber") == serial_number:
+            return True
+    return False
 
 
 async def get_issuer_common_name(cert_path: Path) -> str:
