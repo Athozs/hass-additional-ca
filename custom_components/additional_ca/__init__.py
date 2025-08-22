@@ -27,7 +27,8 @@ CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
-                vol.Optional("force_additional_ca", default=False): cv.string,
+                # Valid true values for force_additional_ca are: True, true, 1, yes, on
+                vol.Optional(FORCE_ADDITIONAL_CA, default=False): cv.boolean,
             },
             extra=vol.ALLOW_EXTRA,
         )
@@ -49,12 +50,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             )
         )
 
-    return True
-
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Set up the integration from a config entry."""
-
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
 
     if not config_path.exists():
@@ -63,12 +58,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if not config_path.is_dir():
         log.error(f"'{CONFIG_SUBDIR}' must be a directory.")
         return False
-
-    # Store entry data
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = entry.data
-
-    # Create a config dict in the expected format
-    config = {DOMAIN: entry.data}
 
     try:
         ca_files = await update_ca_certificates(hass, config)
@@ -85,6 +74,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         log.error("Could not check SSL Context.")
         raise
 
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Set up the integration from a config entry."""
+    # Store entry data
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = entry.data
     return True
 
 
@@ -107,9 +103,9 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
     :rtype: dict[str, str]
     """
 
-    conf = dict(config.get(DOMAIN))
+    conf = config.get(DOMAIN)
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
-    force_additional_ca = conf.pop(FORCE_ADDITIONAL_CA, False)
+    force_additional_ca = conf.pop(FORCE_ADDITIONAL_CA, None)
 
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():

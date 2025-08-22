@@ -1,7 +1,6 @@
 *** Settings ***
 Documentation     A test suite for error cases.
 
-Library   RequestsLibrary
 Resource  integration.resource
 
 Suite Setup  Error Suite Setup

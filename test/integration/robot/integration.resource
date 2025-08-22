@@ -2,18 +2,21 @@
 Documentation     Resource file for integration tests
 
 Library    Process
-Library   RequestsLibrary
+Library    RequestsLibrary
+Library    OperatingSystem
 
 
 *** Keywords ***
 
 Normal Suite Setup
+    Copy File    test/integration/files/configuration_no_force.yaml    test/integration/files/config/configuration.yaml
     Start HomeAssistant container    environment_var=REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
     # HomeAssistant needs to be restarted to take new CAs into account
     Attempt to restart HomeAssistant
 
 
 Error Suite Setup
+    Copy File    test/integration/files/configuration_error_case.yaml    test/integration/files/config/configuration.yaml
     Start HomeAssistant container
 
 
@@ -86,6 +89,7 @@ Attempt to restart HomeAssistant
     ...    Content-Type=application/json
     ${response} =    Wait Until Keyword Succeeds    120s    5s    POST  http://localhost:8123/api/services/homeassistant/restart
     ...  headers=${headers}
+    Wait Until Additional CA integration is loaded
     RETURN  ${response}
 
 
@@ -99,3 +103,15 @@ Container Should Not Exist
     ${result} =    Run Process    docker    @{docker_run_args}    stdout=stdout_docker_ps.txt    stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
     Should Not Contain    ${result.stdout}    ${container_name}
+
+
+HomeAssistant Logs Should Not Contain
+    [Arguments]    ${string_to_check}
+    ${log_content} =    Get File    test/integration/files/config/home-assistant.log
+    Should Not Contain    ${log_content}    ${string_to_check}    msg=HomeAssistant logs contain the unexpected string: '${string_to_check}'    values=False
+
+
+HomeAssistant Logs Should Contain
+    [Arguments]    ${string_to_check}
+    ${log_content} =    Get File    test/integration/files/config/home-assistant.log
+    Should Contain    ${log_content}    ${string_to_check}    msg=HomeAssistant logs do not contain the expected string: '${string_to_check}'    values=False
