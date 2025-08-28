@@ -6,6 +6,11 @@ Library    RequestsLibrary
 Library    OperatingSystem
 
 
+*** Variables ***
+${GITHUB_WORKSPACE} =  to_be_overridden
+${HASS_TOKEN} =  to_be_overridden
+
+
 *** Keywords ***
 
 Normal Suite Setup
