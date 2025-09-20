@@ -1,4 +1,4 @@
-homeassistant==2025.5
+homeassistant
 colorlog
 isort[colors]
 black

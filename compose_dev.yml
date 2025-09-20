@@ -3,7 +3,7 @@ version: '3'
 services:
 
   hass_dev:
-    image: ghcr.io/home-assistant/home-assistant:2025.5
+    image: ghcr.io/home-assistant/home-assistant:2025.8
     ### Alternative Home-Assistant image
     # image: linuxserver/homeassistant:latest
     container_name: hass_dev

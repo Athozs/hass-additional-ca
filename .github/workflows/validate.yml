@@ -55,10 +55,10 @@ jobs:
         run: |
           python -m pytest test/unit/ -v --tb=short --cov=custom_components.additional_ca --cov-report=term-missing
 
-  integration-tests:
+  functional-tests:
     runs-on: ubuntu-latest
     environment: env1
-    name: "Integration Tests"
+    name: "Functional Tests"
     steps:
       - name: "Checkout the repository"
         uses: actions/checkout@v3
@@ -73,9 +73,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements_test.txt
 
-      - name: "Run Robot integration tests"
+      - name: "Run Robot functional tests"
         run: |
-          cp -r custom_components test/integration/files/config/
+          cp -r custom_components test/functional/files/config/
 
           robot \
             --variable GITHUB_WORKSPACE:${{ github.workspace }} \
@@ -83,7 +83,7 @@ jobs:
             --loglevel DEBUG \
             --report NONE \
             --log log.html \
-            ${{ github.workspace }}/test/integration/robot/
+            ${{ github.workspace }}/test/functional/robot/
 
       - name: "Upload Robot log.html as artifact"
         if: always()
