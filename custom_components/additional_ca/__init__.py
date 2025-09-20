@@ -138,7 +138,9 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
         ca_already_loaded = await check_ssl_context_by_serial_number(ca_value, identifier)
 
         # add CA to be checked in the global SSL Context at the end
-        ca_files_dict[ca_value] = identifier
+        ca_files_dict[ca_value] = {}
+        ca_files_dict[ca_value]["serial_number"] = identifier
+        ca_files_dict[ca_value]["common_name"] = common_name
 
         # TODO: update docs in README.md -> there is a new option for user to force the load of additional CAs
         if force_additional_ca:

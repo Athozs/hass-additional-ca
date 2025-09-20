@@ -209,7 +209,11 @@ class TestCheckHassSslContext:
         """Test SSL context check when CA is found."""
         # Arrange
         hass = MagicMock(spec=HomeAssistant)
-        ca_files = {"test_ca.crt": "12345678"}
+        ca_files = {"test_ca.crt": {
+            "serial_number": "12345678",
+            "common_name": "One Common Name"
+            }
+        }
         mock_check_ssl.return_value = True
 
         # Act
@@ -231,7 +235,11 @@ class TestCheckHassSslContext:
         """Test SSL context check when CA is not found."""
         # Arrange
         hass = MagicMock(spec=HomeAssistant)
-        ca_files = {"test_ca.crt": "12345678"}
+        ca_files = {"test_ca.crt": {
+            "serial_number": "12345678",
+            "common_name": "One Common Name"
+            }
+        }
         mock_check_ssl.return_value = False
 
         # Act
@@ -241,7 +249,7 @@ class TestCheckHassSslContext:
         mock_check_ssl.assert_called_once_with("test_ca.crt", "12345678")
         mock_notification.async_create.assert_called_once_with(
             hass,
-            message="CA 'test_ca.crt' with Serial Number '12345678' is missing in SSL Context. Home Assistant needs to be restarted.",
+            message="CA 'test_ca.crt' with Common Name 'One Common Name' is missing in SSL Context. Home Assistant needs to be restarted.",
             title="Additional CA (custom integration)",
             notification_id=f"12345678_{NEEDS_RESTART_NOTIF_ID}"
         )
@@ -255,8 +263,14 @@ class TestCheckHassSslContext:
         # Arrange
         hass = MagicMock(spec=HomeAssistant)
         ca_files = {
-            "ca1.crt": "11111111",
-            "ca2.crt": "22222222",
+            "ca1.crt": {
+                "serial_number": "11111111",
+                "common_name": "One Common Name"
+            },
+            "ca2.crt": {
+                "serial_number": "22222222",
+                "common_name": "Another Common Name"
+            },
         }
         mock_check_ssl.side_effect = [True, False]
 

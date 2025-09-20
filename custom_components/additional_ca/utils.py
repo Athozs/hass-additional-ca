@@ -98,17 +98,19 @@ async def check_hass_ssl_context(hass: HomeAssistant, ca_files: dict[str, str]) 
 
     log.info("Finally verifying SSL Context")
 
-    for ca_filename, serial_number in ca_files.items():
+    for ca_filename, identifers in ca_files.items():
         log.info(f"Checking SSL Context for Additional CA: {ca_filename}")
+        serial_number = identifers["serial_number"]
+        common_name = identifers["common_name"]
         contains_custom_ca = await check_ssl_context_by_serial_number(ca_filename, serial_number)
 
         # create persistent notification if needed
         notif_id = f"{serial_number}_{NEEDS_RESTART_NOTIF_ID}"
         if contains_custom_ca:
-            log.info(f"SSL Context contains CA '{ca_filename}' with Serial Number '{serial_number}'.")
+            log.info(f"SSL Context contains CA '{ca_filename}' with Common Name '{common_name}'.")
             persistent_notification.async_dismiss(hass, notif_id)
         else:
-            msg = f"CA '{ca_filename}' with Serial Number '{serial_number}' is missing in SSL Context. Home Assistant needs to be restarted."
+            msg = f"CA '{ca_filename}' with Common Name '{common_name}' is missing in SSL Context. Home Assistant needs to be restarted."
             log.error(msg)
             persistent_notification.async_create(
                 hass,
