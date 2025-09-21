@@ -47,23 +47,13 @@ cp my_ca.crt config/additional_ca/
 default_config:
 additional_ca:
   my_private_ca: my_ca.crt
+  # Optional: force loading additional CAs even if there are already present in system CA
+  force_additional_ca: true
 # ...
 ```
 
-4. Export an environment variable if running Home Assistant with Docker (not needed for Home Assistant OS (HAOS) installations):
-
-```yaml
-# compose.yml
-version: '3'
-services:
-  homeassistant:
-    # ...
-    environment:
-      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-```
-
-5. Restart Home Assistant
-6. Done!
+4. Restart Home Assistant
+5. Done!
 
 
 ___
@@ -89,23 +79,20 @@ __Table of contents__
   - [5. HOW DOES _Additional CA_ WORK UNDER THE HOOD?](#5-how-does-additional-ca-work-under-the-hood)
     - [5.1. Docker](#51-docker)
     - [5.2. HAOS - Home Assistant Operating System](#52-haos---home-assistant-operating-system)
-  - [6. SET `REQUESTS_CA_BUNDLE` ENVIRONMENT VARIABLE](#6-set-requests_ca_bundle-environment-variable)
-    - [6.1. Docker and Core](#61-docker-and-core)
-    - [6.2. HAOS - Home Assistant Operating System](#62-haos---home-assistant-operating-system)
-  - [7. HOW TO TEST YOUR CA WITH HTTPS](#7-how-to-test-your-ca-with-https)
-    - [7.1. Test with RESTful Command action](#71-test-with-restful-command-action)
-    - [7.2. Test with `curl`](#72-test-with-curl)
-      - [7.2.1. Docker](#721-docker)
-      - [7.2.2. HAOS - Home Assistant Operating System](#722-haos---home-assistant-operating-system)
-  - [8. HOW TO REMOVE A PRIVATE CA?](#8-how-to-remove-a-private-ca)
-  - [9. UNINSTALL](#9-uninstall)
-  - [10. TROUBLESHOOTING](#10-troubleshooting)
-    - [10.1. General troubleshooting](#101-general-troubleshooting)
-    - [10.2. Reset CA trust store of Home Assistant](#102-reset-ca-trust-store-of-home-assistant)
-      - [10.2.1. Docker](#1021-docker)
-      - [10.2.2. HAOS - Home Assistant Operating System](#1022-haos---home-assistant-operating-system)
-    - [10.3. Tips](#103-tips)
-  - [11. KNOWN ISSUES](#11-known-issues)
+  - [6. HOW TO TEST YOUR CA WITH HTTPS](#6-how-to-test-your-ca-with-https)
+    - [6.1. Test with RESTful Command action](#61-test-with-restful-command-action)
+    - [6.2. Test with `curl`](#62-test-with-curl)
+      - [6.2.1. Docker](#621-docker)
+      - [6.2.2. HAOS - Home Assistant Operating System](#622-haos---home-assistant-operating-system)
+  - [7. HOW TO REMOVE A PRIVATE CA?](#7-how-to-remove-a-private-ca)
+  - [8. UNINSTALL](#8-uninstall)
+  - [9. TROUBLESHOOTING](#9-troubleshooting)
+    - [9.1. General troubleshooting](#91-general-troubleshooting)
+    - [9.2. Reset CA trust store of Home Assistant](#92-reset-ca-trust-store-of-home-assistant)
+      - [9.2.1. Docker](#921-docker)
+      - [9.2.2. HAOS - Home Assistant Operating System](#922-haos---home-assistant-operating-system)
+    - [9.3. Tips](#93-tips)
+  - [10. KNOWN ISSUES](#10-known-issues)
 
 
 ## 1. INSTALL WITH HACS
@@ -153,7 +140,7 @@ git clone https://github.com/Athozs/hass-additional-ca.git
 # copy additional_ca integration to Home Assistant custom components
 mkdir -p config/custom_components
 cp -r hass-additional-ca/custom_components/additional_ca config/custom_components/
-# Installation is done, now see Configuration section (README.md)
+# Installation is done, now see section [Configuration](#3-configuration) in this README.md
 ```
 
 #### 2.1.2. Install using `wget`
@@ -170,7 +157,7 @@ unzip additional_ca.zip
 # copy additional_ca integration to Home Assistant custom components
 mkdir -p config/custom_components
 cp -r additional_ca config/custom_components/
-# Installation is done, now see Configuration section (README.md)
+# Installation is done, now see section [Configuration](#3-configuration) in this README.md
 ```
 
 #### 2.1.3 Download and install manually
@@ -178,7 +165,7 @@ cp -r additional_ca config/custom_components/
 - Click the button to download the ZIP archive of _Additional CA_ [![Release version](https://img.shields.io/github/v/release/Athozs/hass-additional-ca?color=brightgreen&label=Download&style=for-the-badge)](https://github.com/Athozs/hass-additional-ca/releases/latest/download/additional_ca.zip "Download")
 - Unzip the archive.
 - Move the `additional_ca` folder into the `config/custom_components/` directory.
-- Installation is done. Now, see the Configuration section (README.md).
+- Installation is done. Now, see the section [Configuration](#3-configuration) in this README.md.
 
 
 ### 2.2. HAOS - Home Assistant Operating System
@@ -289,6 +276,20 @@ additional_ca:
 # ...
 ```
 
+You can also force the integration to load additional CAs, even if there are already present in system CA, by setting the `force_additional_ca` option to `true`. Valid true values for `force_additional_ca` are: `True`, `true`, `1`, `yes`, `on`.
+
+Example:
+
+```yaml
+# configuration.yaml
+---
+default_config:
+additional_ca:
+  some_ca: my_ca.crt
+  force_additional_ca: true
+# ...
+```
+
 Model:
 
 ```yaml
@@ -297,7 +298,7 @@ Model:
 default_config:
 additional_ca:
   <string>: <Certificate filename or Certificate relative path as string>
-  <string>: <Certificate filename or Certificate relative path as string>
+  force_additional_ca: true  # Optional, boolean
   # ...: ...
 ```
 
@@ -308,6 +309,7 @@ Another example:
 ---
 default_config:
 additional_ca:
+  force_additional_ca: true                        # Optional, boolean
   some_ca: my_ca.crt                               # a cert file
   ca_foo: some_folder/ca2.pem                      # relative path + a cert file
   ca_bar: some_folder/ca3.crt                      # relative path + a cert file
@@ -316,35 +318,14 @@ additional_ca:
 # ...
 ```
 
-4. Optionally, if you're running Home Assistant with Docker, set the environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt`:
-
-Example with Docker Compose:
-
-```yaml
-# compose.yml
-version: '3'
-services:
-  homeassistant:
-    container_name: homeassistant
-    hostname: home-assistant
-    image: homeassistant/home-assistant:2023.5.2
-    volumes:
-      - ./config:/config
-    environment:
-      - TZ=Europe/Paris
-      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-    restart: unless-stopped
-    network_mode: host
-```
-
-5. Restart Home Assistant.
+4. Restart Home Assistant.
 
 > [!IMPORTANT]
 > Some integrations need to be set up again to use the updated CA trust store (which now includes your private CA).
 >
 > After upgrading Home Assistant to a new version, you need to restart Home Assistant to load your certificates again.
 
-6. Check the logs. Look for the pattern `additional_ca` in the traces (there is no UI for _Additional CA_).
+5. Check the logs. Look for the pattern `additional_ca` in the traces (there is no UI for _Additional CA_).
 
 
 ## 4. UPGRADE
@@ -365,58 +346,35 @@ If you upgrade to a new version of the _Additional CA_ integration, you need to 
 
 If you're running Home Assistant with Docker:
 
-When enabled, the _Additional CA_ integration looks for private Certificate Authority (CA) files and self-signed certificates in the `config/additional_ca` directory.
+When enabled, the _Additional CA_ integration looks for private Certificate Authority (CA) files and self-signed certificates in the `config/additional_ca/` directory.
 
 The _Additional CA_ integration loads private CAs and self-signed certs only at Home Assistant startup.
 
-The _Additional CA_ integration copies the private CAs and self-signed certs to the `/usr/local/share/ca-certificates/` directory inside the container and runs the `update-ca-certificates` command to update the TLS/SSL trust store.
+The _Additional CA_ integration copies the private CAs and self-signed certs to the `/usr/local/share/ca-certificates/` directory inside the container and runs the `update-ca-certificates` command to update the TLS/SSL trust store at `/etc/ssl/certs/ca-certificates.crt`.
+
+> [!NOTE]
+> In earlier versions of _Additional CA_ (0.4.x and below), you needed to set the `REQUESTS_CA_BUNDLE` environment variable for certificate verification. This is no longer required. The integration now uses the `certifi-linux` Python package, which automatically points Certifi to the system CA bundle at `/etc/ssl/certs/ca-certificates.crt`.
 
 
 ### 5.2. HAOS - Home Assistant Operating System
 
 HAOS is actually a Linux-based OS that runs a `homeassistant` Docker container inside.
 
-If you're running Home Assistant from a HAOS or Supervised installation, the _Additional CA_ integration works the same way as with Docker. However, you can't permanently export an environment variable in HAOS, so there is a workaround: the _Additional CA_ integration will also add the private CA to the Certifi CA bundle at `/usr/local/lib/python3.xx/site-packages/certifi/cacert.pem` inside the `homeassistant` container if it is not already present (thanks to @nabbi for the contribution).
+If you're running Home Assistant from a HAOS or Supervised installation, the _Additional CA_ integration works the same way as with Docker.
 
-Thus, for HAOS, your private CA or self-signed cert will appear in the container's CA trust store __and__ in the Certifi CA bundle (both are inside the `homeassistant` container).
-
-To show the Certifi CA bundle content:
+To show the system CA content:
 
 - Turn off Protection mode in the SSH add-on to enable the `docker` CLI (Settings \> Add-ons \> SSH \> turn off Protection mode).
 - Connect to HAOS with SSH, then from the command line, run:
 
 ```shell
-# Get Certifi bundle path
-docker exec homeassistant python -m certifi
-# Replace XX with the actual Python version
-docker exec homeassistant cat "/usr/local/lib/python3.XX/site-packages/certifi/cacert.pem"
+docker exec homeassistant cat "/etc/ssl/certs/ca-certificates.crt"
 ```
 
-After upgrading Home Assistant to a new version, you need to restart Home Assistant to load your certificates again.
 
+## 6. HOW TO TEST YOUR CA WITH HTTPS
 
-## 6. SET `REQUESTS_CA_BUNDLE` ENVIRONMENT VARIABLE
-
-Home Assistant implements a [Python SSL context](https://docs.python.org/3/library/ssl.html#ssl.SSLContext) based on the environment variable `REQUESTS_CA_BUNDLE`.
-
-
-### 6.1. Docker and Core
-
-If you're running Home Assistant with a Docker or Core installation, you may need to set the environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt` (this will not work permanently on HAOS).
-
-This is optional, it depends on your installed integrations.
-
-Anyway, setting the environment variable `REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt` __should not__ break your Home Assistant server.
-
-
-### 6.2. HAOS - Home Assistant Operating System
-
-> [!NOTE]
-> At the time of writing, there is no reliable way to permanently set an environment variable in Home Assistant OS (HAOS). As a workaround, the _Additional CA_ integration adds your private CA to the Certifi CA bundle if it is not already present.
-
-## 7. HOW TO TEST YOUR CA WITH HTTPS
-
-### 7.1. Test with RESTful Command action
+### 6.1. Test with RESTful Command action
 
 After adding your CA, you can create a test action/service to verify that the __https__ connection is working.
 
@@ -440,17 +398,20 @@ rest_command:
 
 ```
 
-- Then, run the action `RESTful Command: additional_ca_test` from the Developer Tools panel. Starting from Home Assistant version 2024.2.x, you should see `status: 200` in the response to confirm success.
+- Then, run the action `RESTful Command: additional_ca_test` from the Developer Tools panel. You should see `status: 200` in the response to confirm success.
 - If TLS/SSL does not work, you will see error details in the Home Assistant logs:
 
 ```text
-[homeassistant.components.rest_command] Client error. Url: https://your-server.com/. Error: Cannot connect to host your-server.com ssl:True [SSLCertVerificationError: (1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1006)')]
+[homeassistant.components.rest_command] Client error. Url: https://your-server.com/.
+Error: Cannot connect to host your-server.com ssl:True
+[SSLCertVerificationError: (1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed:
+unable to get local issuer certificate (_ssl.c:1006)')]
 ```
 
 
-### 7.2. Test with `curl`
+### 6.2. Test with `curl`
 
-#### 7.2.1. Docker
+#### 6.2.1. Docker
 
 To test your CA using `curl`, if you're running Home Assistant with Docker, then from your shell prompt, run:
 
@@ -460,8 +421,7 @@ docker exec CONTAINER_NAME curl -v -I https://your-server.com
 
 You should see an HTTP code 200 to confirm success.
 
-
-#### 7.2.2. HAOS - Home Assistant Operating System
+#### 6.2.2. HAOS - Home Assistant Operating System
 
 To test your CA using `curl`, if you're running Home Assistant with HAOS:
 
@@ -475,7 +435,7 @@ docker exec homeassistant curl -v -I https://your-server.com
 You should see an HTTP code 200 to confirm success.
 
 
-## 8. HOW TO REMOVE A PRIVATE CA?
+## 7. HOW TO REMOVE A PRIVATE CA?
 
 To remove your CA: remove or comment out the CA entry under the `additional_ca` domain key in `configuration.yaml`:
 
@@ -492,10 +452,10 @@ Note: The `additional_ca` domain key needs to be present (even if empty) in `con
 
 Optionally, remove your private CA file from the `config/additional_ca/` directory.
 
-Then, restart Home Assistant.
+Then, reset system CA of Home Assistant, see section [Reset CA trust store of Home Assistant](#92-reset-ca-trust-store-of-home-assistant) in this README.md.
 
 
-## 9. UNINSTALL
+## 8. UNINSTALL
 
 To uninstall the _Additional CA_ integration, follow these steps:
 
@@ -540,21 +500,21 @@ docker compose up -d --force-recreate
 ```
 
 
-## 10. TROUBLESHOOTING
+## 9. TROUBLESHOOTING
 
 Some tips for cleaning your CA trust store inside Home Assistant in case of failure.
 
 
-### 10.1. General troubleshooting
+### 9.1. General troubleshooting
 
 * Enable the INFO log level in Home Assistant (see Tips below).
 * Check the error logs in Home Assistant at Settings \> System \> Logs.
 * Some integrations need to be set up again to use the updated CA trust store (which now includes your private CA).
 
 
-### 10.2. Reset CA trust store of Home Assistant
+### 9.2. Reset CA trust store of Home Assistant
 
-#### 10.2.1. Docker
+#### 9.2.1. Docker
 
 To reset the CA trust store in Home Assistant with Docker:
 
@@ -565,10 +525,9 @@ Alternatively, you can do the following:
 - Manually remove the private CA files from the `/usr/local/share/ca-certificates/` directory inside the HA container.
 - Then, manually update the CA trust store by running the command `update-ca-certificates` inside the HA container.
 
+#### 9.2.2. HAOS - Home Assistant Operating System
 
-#### 10.2.2. HAOS - Home Assistant Operating System
-
-To reset the CA trust store in Home Assistant from a HAOS or Supervised installation, you can reset the Certifi CA bundle:
+To reset the CA trust store in Home Assistant from a HAOS or Supervised installation:
 
 - Turn off Protection mode in the SSH add-on to enable the `docker` CLI (Settings \> Add-ons \> SSH \> turn off Protection mode).
 - Connect to HAOS via SSH, then from the command line, run the following to stop and remove the `homeassistant` Docker container inside HAOS and reboot HAOS:
@@ -579,14 +538,8 @@ docker rm homeassistant
 reboot
 ```
 
-Alternatively, you can do the following:
 
-- Download the original bundle from [https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem](https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem).
-- Replace the file at the Certifi bundle path.
-- To get the Certifi bundle path, connect to HAOS via SSH, then from the command line, run `docker exec homeassistant python -m certifi`.
-
-
-### 10.3. Tips
+### 9.3. Tips
 
 * To enable the INFO log level, add the following to your `configuration.yaml`:
 
@@ -603,6 +556,6 @@ openssl x509 -in config/additional_ca/my_ca.crt -text -noout
 ```
 
 
-## 11. KNOWN ISSUES
+## 10. KNOWN ISSUES
 
 * In some cases, you may have to restart Home Assistant twice for the new CA to be taken into account. This is due to Home Assistant creating an SSL context before integrations can be loaded.

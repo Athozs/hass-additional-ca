@@ -65,8 +65,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         log.error("Additional CA setup has been interrupted.")
         raise
 
-    # TODO: update docs in README.md -> certifi bundle is not updated anymore, we use certifi-linux python package instead
-
     # finally verifying the SSL context of Home Assistant
     try:
         await check_hass_ssl_context(hass, ca_files)
@@ -142,7 +140,6 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
         ca_files_dict[ca_value]["serial_number"] = identifier
         ca_files_dict[ca_value]["common_name"] = common_name
 
-        # TODO: update docs in README.md -> there is a new option for user to force the load of additional CAs
         if force_additional_ca:
             log.info(f"Forcing load of {ca_key} ({ca_value}).")
         elif ca_already_loaded:
