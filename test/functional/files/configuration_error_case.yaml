@@ -6,11 +6,11 @@ logger:
   default: info
 
 additional_ca:
-  badssl_ca: badssl-com-chain.pem
+  simple_ca: simple-https-server.pem
 
 rest_command:
   additional_ca_test:
-    url: "https://self-signed.badssl.com"
+    url: "https://simple-https-server:4433"
     method: get
     verify_ssl: true
     timeout: 30

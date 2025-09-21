@@ -7,7 +7,7 @@ logger:
 
 additional_ca:
   force_additional_ca: true
-  badssl_ca: badssl-com-chain.pem
+  simple_ca: simple-https-server.pem
   rapidssl_ca: RapidSSLTLSRSACAG1.crt.pem
   hon_ca: hon_cert.crt
   my_ca_1_missing: dummy.crt
@@ -16,7 +16,7 @@ additional_ca:
 
 rest_command:
   additional_ca_test:
-    url: "https://self-signed.badssl.com"
+    url: "https://simple-https-server:4433"
     method: get
     verify_ssl: true
     timeout: 30

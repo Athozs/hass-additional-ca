@@ -73,10 +73,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements_test.txt
 
+      - name: "Build and run a dummy HTTPS server"
+        run: |
+          docker network create robot
+          docker build -t simple-https-server test/functional/helpers/
+          docker run --rm -d -p 4433:4433 --network robot --name simple-https-server simple-https-server
+          sleep 5
+          docker cp simple-https-server:/root/.local/share/mkcert/rootCA.pem test/functional/files/config/additional_ca/simple-https-server.pem
+
       - name: "Run Robot functional tests"
         run: |
           cp -r custom_components test/functional/files/config/
-
           robot \
             --variable GITHUB_WORKSPACE:${{ github.workspace }} \
             --variable HASS_TOKEN:${{ secrets.HASS_TOKEN }} \
@@ -103,3 +110,7 @@ jobs:
         run: |
           docker stop homeassistant 2>/dev/null || true
           docker rm homeassistant 2>/dev/null || true
+          docker stop simple-https-server 2>/dev/null || true
+          docker rm simple-https-server 2>/dev/null || true
+          docker ps -a
+          docker network remove robot 2>/dev/null || true

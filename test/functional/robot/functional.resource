@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation     Resource file for integration tests
+Documentation     Resource file for functional tests
 
 Library    Process
 Library    RequestsLibrary
@@ -14,14 +14,14 @@ ${HASS_TOKEN} =  to_be_overridden
 *** Keywords ***
 
 Normal Suite Setup
-    Copy File    test/integration/files/configuration_no_force.yaml    test/integration/files/config/configuration.yaml
-    Start HomeAssistant container    environment_var=REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+    OperatingSystem.Copy File    test/functional/files/configuration_no_force.yaml    test/functional/files/config/configuration.yaml
+    Start HomeAssistant container
     # HomeAssistant needs to be restarted to take new CAs into account
     Attempt to restart HomeAssistant
 
 
 Error Suite Setup
-    Copy File    test/integration/files/configuration_error_case.yaml    test/integration/files/config/configuration.yaml
+    OperatingSystem.Copy File    test/functional/files/configuration_error_case.yaml    test/functional/files/config/configuration.yaml
     Start HomeAssistant container
 
 
@@ -38,23 +38,24 @@ Start HomeAssistant container
     ...  --env  TZ=UTC
     ...  --env  PYTHONUNBUFFERED=1
     ...  --env  ${environment_var}
-    ...  -v  ${GITHUB_WORKSPACE}/test/integration/files/config:/config
+    ...  -v  ${GITHUB_WORKSPACE}/test/functional/files/config:/config
+    ...  --network  robot
     ...  -p  8123:8123
     ...  -d
     ...  ghcr.io/home-assistant/home-assistant:stable
-    ${result} =    Run Process    docker  @{docker_run_args}  stdout=stdout_docker_run2.txt  stderr=STDOUT
+    ${result} =    Process.Run Process    docker  @{docker_run_args}  stdout=stdout_docker_run2.txt  stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
-    Log To Console  container ${result.stdout} created
+    Log To Console  container homeassistant ${result.stdout} created
     Wait Until Keyword Succeeds    120s    5s    Wait Until Additional CA integration is loaded
     RETURN    ${result.stdout}
 
 
 Stop HomeAssistant container
-    @{docker_run_args} =  Create List  stop  homeassistant
-    ${result} =    Run Process    docker  @{docker_run_args}  stdout=stdout_docker_stop.txt  stderr=STDOUT
+    @{docker_stop_args} =  Create List  stop  homeassistant
+    ${result} =    Process.Run Process    docker  @{docker_stop_args}  stdout=stdout_docker_stop.txt  stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
     Wait Until Keyword Succeeds    30s    2s    Container Should Not Exist    homeassistant
-    Log To Console  ${result.stdout} stopped
+    Log To Console  container ${result.stdout} stopped
     RETURN    ${result.stdout}
 
 
@@ -62,7 +63,7 @@ Wait Until Additional CA integration is loaded
     ${headers}  Create Dictionary
     ...    Authorization=Bearer ${HASS_TOKEN}
     ...    Content-Type=application/json
-    ${response} =  Wait Until Keyword Succeeds    120s    5s    GET  http://localhost:8123/api/config/config_entries/entry
+    ${response} =  Wait Until Keyword Succeeds    120s    5s    RequestsLibrary.GET  http://localhost:8123/api/config/config_entries/entry
     ...    headers=${headers}
 
     # Check if additional_ca domain is loaded
@@ -82,7 +83,7 @@ Run HomeAssistant Action Rest Command
     ${headers}  Create Dictionary
     ...    Authorization=Bearer ${HASS_TOKEN}
     ...    Content-Type=application/json
-    ${response} =    POST  http://localhost:8123/api/services/rest_command/${command_name}
+    ${response} =    RequestsLibrary.POST  http://localhost:8123/api/services/rest_command/${command_name}
     ...  params=return_response
     ...  headers=${headers}
     RETURN  ${response}
@@ -92,7 +93,7 @@ Attempt to restart HomeAssistant
     ${headers}  Create Dictionary
     ...    Authorization=Bearer ${HASS_TOKEN}
     ...    Content-Type=application/json
-    ${response} =    Wait Until Keyword Succeeds    120s    5s    POST  http://localhost:8123/api/services/homeassistant/restart
+    ${response} =    Wait Until Keyword Succeeds    120s    5s    RequestsLibrary.POST  http://localhost:8123/api/services/homeassistant/restart
     ...  headers=${headers}
     Wait Until Additional CA integration is loaded
     RETURN  ${response}
@@ -105,18 +106,18 @@ Container Should Not Exist
     ...    -a
     ...    --filter    name=${container_name}
     ...    --format    {{.Names}}
-    ${result} =    Run Process    docker    @{docker_run_args}    stdout=stdout_docker_ps.txt    stderr=STDOUT
+    ${result} =    Process.Run Process    docker    @{docker_run_args}    stdout=stdout_docker_ps.txt    stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
     Should Not Contain    ${result.stdout}    ${container_name}
 
 
 HomeAssistant Logs Should Not Contain
     [Arguments]    ${string_to_check}
-    ${log_content} =    Get File    test/integration/files/config/home-assistant.log
+    ${log_content} =    OperatingSystem.Get File    test/functional/files/config/home-assistant.log
     Should Not Contain    ${log_content}    ${string_to_check}    msg=HomeAssistant logs contain the unexpected string: '${string_to_check}'    values=False
 
 
 HomeAssistant Logs Should Contain
     [Arguments]    ${string_to_check}
-    ${log_content} =    Get File    test/integration/files/config/home-assistant.log
+    ${log_content} =    OperatingSystem.Get File    test/functional/files/config/home-assistant.log
     Should Contain    ${log_content}    ${string_to_check}    msg=HomeAssistant logs do not contain the expected string: '${string_to_check}'    values=False

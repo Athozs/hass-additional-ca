@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation     A test suite for error cases.
 
-Resource  integration.resource
+Resource  functional.resource
 
 Suite Setup  Error Suite Setup
 Suite Teardown  Custom Suite Teardown
