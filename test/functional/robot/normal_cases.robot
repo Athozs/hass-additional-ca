@@ -29,3 +29,5 @@ Forcing Load of Certificates
     [Setup]  Copy File    test/functional/files/configuration_force_additional_ca.yaml    test/functional/files/config/configuration.yaml
     Attempt to restart HomeAssistant
     HomeAssistant Logs Should Contain    Forcing load of
+    ${response} =  Wait Until Keyword Succeeds    120s    10s    Run HomeAssistant Action Rest Command    additional_ca_test
+    Should Be Equal As Strings    200  ${response.json()}[service_response][status]

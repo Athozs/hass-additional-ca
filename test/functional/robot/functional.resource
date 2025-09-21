@@ -121,3 +121,9 @@ HomeAssistant Logs Should Contain
     [Arguments]    ${string_to_check}
     ${log_content} =    OperatingSystem.Get File    test/functional/files/config/home-assistant.log
     Should Contain    ${log_content}    ${string_to_check}    msg=HomeAssistant logs do not contain the expected string: '${string_to_check}'    values=False
+
+
+HomeAssistant Logs Should Match Regex
+    [Arguments]    ${regex}
+    ${log_content} =    OperatingSystem.Get File    test/functional/files/config/home-assistant.log
+    Should Match Regexp    ${log_content}    ${regex}    msg=HomeAssistant logs do not contain the expected regex: '${regex}'    values=False
