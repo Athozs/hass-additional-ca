@@ -60,10 +60,15 @@ Stop HomeAssistant container
 
 
 Wait Until Additional CA integration is loaded
+    Wait Until Keyword Succeeds    120s    5s    Additional CA integration is loaded
+
+
+Additional CA integration is loaded
+    [Documentation]    This keyword returns True or False if Additional CA integration is loaded or not
     ${headers}  Create Dictionary
     ...    Authorization=Bearer ${HASS_TOKEN}
     ...    Content-Type=application/json
-    ${response} =  Wait Until Keyword Succeeds    120s    5s    RequestsLibrary.GET  http://localhost:8123/api/config/config_entries/entry
+    ${response} =  RequestsLibrary.GET  http://localhost:8123/api/config/config_entries/entry
     ...    headers=${headers}
 
     # Check if additional_ca domain is loaded
