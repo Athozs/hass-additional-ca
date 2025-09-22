@@ -41,19 +41,19 @@ mkdir -p config/additional_ca
 cp my_ca.crt config/additional_ca/
 ```
 
+4. Enable `additional_ca` in `configuration.yaml`:
+
 ```yaml
 # configuration.yaml
 ---
 default_config:
 additional_ca:
   my_private_ca: my_ca.crt
-  # Optional: force loading additional CAs even if there are already present in system CA
-  force_additional_ca: true
 # ...
 ```
 
-4. Restart Home Assistant
-5. Done!
+5. Restart Home Assistant
+6. Done!
 
 
 ___
@@ -257,8 +257,11 @@ Directory structure example:
 │   ├── custom_components/
 │   │   └── additional_ca/
 │   │       ├── __init__.py
+│   │       ├── config_flow.py
 │   │       ├── const.py
-│   │       └── manifest.json
+│   │       ├── exceptions.py
+│   │       ├── manifest.json
+│   │       └── utils.py
 │   ├── ...
 ...
 ```
@@ -276,7 +279,7 @@ additional_ca:
 # ...
 ```
 
-You can also force the integration to load additional CAs, even if there are already present in system CA, by setting the `force_additional_ca` option to `true`. Valid true values for `force_additional_ca` are: `True`, `true`, `1`, `yes`, `on`.
+You can force the integration to load additional CAs, even if they already exist in the system CA trust store, by setting the `force_additional_ca` option to `true`. Accepted values for `true` include: `True`, `true`, `1`, `yes`, and `on`.
 
 Example:
 
@@ -321,7 +324,7 @@ additional_ca:
 4. Restart Home Assistant.
 
 > [!IMPORTANT]
-> Some integrations need to be set up again to use the updated CA trust store (which now includes your private CA).
+> Some integrations need to be set up again to use the updated system CA trust store (which now includes your private CA).
 >
 > After upgrading Home Assistant to a new version, you need to restart Home Assistant to load your certificates again.
 
@@ -350,17 +353,17 @@ When enabled, the _Additional CA_ integration looks for private Certificate Auth
 
 The _Additional CA_ integration loads private CAs and self-signed certs only at Home Assistant startup.
 
-The _Additional CA_ integration copies the private CAs and self-signed certs to the `/usr/local/share/ca-certificates/` directory inside the container and runs the `update-ca-certificates` command to update the TLS/SSL trust store at `/etc/ssl/certs/ca-certificates.crt`.
+The _Additional CA_ integration copies the private CAs and self-signed certs to the `/usr/local/share/ca-certificates/` directory inside the container and runs the `update-ca-certificates` command to update the system CA trust store at `/etc/ssl/certs/ca-certificates.crt`.
 
 > [!NOTE]
-> In earlier versions of _Additional CA_ (0.4.x and below), you needed to set the `REQUESTS_CA_BUNDLE` environment variable for certificate verification. This is no longer required. The integration now uses the `certifi-linux` Python package, which automatically points Certifi to the system CA bundle at `/etc/ssl/certs/ca-certificates.crt`.
+> In earlier versions of _Additional CA_ (0.4.x and below), you needed to set the `REQUESTS_CA_BUNDLE` environment variable for certificate verification. This is no longer required. The integration now uses the `certifi-linux` Python package, which automatically points Certifi to the system CA trust store at `/etc/ssl/certs/ca-certificates.crt`.
 
 
 ### 5.2. HAOS - Home Assistant Operating System
 
 HAOS is actually a Linux-based OS that runs a `homeassistant` Docker container inside.
 
-If you're running Home Assistant from a HAOS or Supervised installation, the _Additional CA_ integration works the same way as with Docker.
+If you're running Home Assistant from a HAOS or Supervised installation, the _Additional CA_ integration works the same way as with Docker installation.
 
 To show the system CA content:
 
@@ -448,8 +451,6 @@ additional_ca:
 # ...
 ```
 
-Note: The `additional_ca` domain key needs to be present (even if empty) in `configuration.yaml` for the integration to remove the CA files on the next Home Assistant restart.
-
 Optionally, remove your private CA file from the `config/additional_ca/` directory.
 
 Then, reset system CA of Home Assistant, see section [Reset CA trust store of Home Assistant](#92-reset-ca-trust-store-of-home-assistant) in this README.md.
@@ -502,32 +503,36 @@ docker compose up -d --force-recreate
 
 ## 9. TROUBLESHOOTING
 
-Some tips for cleaning your CA trust store inside Home Assistant in case of failure.
+Some tips for cleaning your system CA trust store inside Home Assistant in case of failure.
 
 
 ### 9.1. General troubleshooting
 
 * Enable the INFO log level in Home Assistant (see Tips below).
 * Check the error logs in Home Assistant at Settings \> System \> Logs.
-* Some integrations need to be set up again to use the updated CA trust store (which now includes your private CA).
+* Some integrations need to be set up again to use the updated system CA trust store (which now includes your private CA).
 
 
 ### 9.2. Reset CA trust store of Home Assistant
 
 #### 9.2.1. Docker
 
-To reset the CA trust store in Home Assistant with Docker:
+To reset the system CA trust store in Home Assistant with Docker:
 
 - Stop and remove the HA container. This will remove all changes made inside the container. Then, start Home Assistant with Docker again.
+
+```shell
+docker compose up -d --force-recreate
+```
 
 Alternatively, you can do the following:
 
 - Manually remove the private CA files from the `/usr/local/share/ca-certificates/` directory inside the HA container.
-- Then, manually update the CA trust store by running the command `update-ca-certificates` inside the HA container.
+- Then, manually update the system CA trust store by running the command `update-ca-certificates` inside the HA container.
 
 #### 9.2.2. HAOS - Home Assistant Operating System
 
-To reset the CA trust store in Home Assistant from a HAOS or Supervised installation:
+To reset the system CA trust store in Home Assistant from a HAOS or Supervised installation:
 
 - Turn off Protection mode in the SSH add-on to enable the `docker` CLI (Settings \> Add-ons \> SSH \> turn off Protection mode).
 - Connect to HAOS via SSH, then from the command line, run the following to stop and remove the `homeassistant` Docker container inside HAOS and reboot HAOS:
