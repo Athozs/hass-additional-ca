@@ -3,13 +3,13 @@ name: "Validate"
 on:
   push:
     branches:
-      - "main"
-      - "feat**"
-    tags-ignore:
-      - "**"
+      - '*'
+    tags:
+      - "*"
   pull_request:
-  # schedule:
-  #   - cron: "0 0 * * *"
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"
 
 jobs:
   validate-hassfest:
@@ -33,3 +33,84 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: "Unit Tests"
+    steps:
+      - name: "Checkout the repository"
+        uses: actions/checkout@v3
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: "Install dependencies"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test.txt
+
+      - name: "Run tests"
+        run: |
+          python -m pytest test/unit/ -v --tb=short --cov=custom_components.additional_ca --cov-report=term-missing
+
+  functional-tests:
+    runs-on: ubuntu-latest
+    environment: env1
+    name: "Functional Tests"
+    steps:
+      - name: "Checkout the repository"
+        uses: actions/checkout@v3
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: "Install Python dependencies"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test.txt
+
+      - name: "Build and run a dummy HTTPS server"
+        run: |
+          docker network create robot
+          docker build -t simple-https-server test/functional/helpers/
+          docker run --rm -d -p 4433:4433 --network robot --name simple-https-server simple-https-server
+          sleep 5
+          docker cp simple-https-server:/root/.local/share/mkcert/rootCA.pem test/functional/files/config/additional_ca/simple-https-server.pem
+
+      - name: "Run Robot functional tests"
+        run: |
+          cp -r custom_components test/functional/files/config/
+          robot \
+            --variable GITHUB_WORKSPACE:${{ github.workspace }} \
+            --variable HASS_TOKEN:${{ secrets.HASS_TOKEN }} \
+            --loglevel DEBUG \
+            --report NONE \
+            --log log.html \
+            ${{ github.workspace }}/test/functional/robot/
+
+      - name: "Upload Robot log.html as artifact"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-log
+          path: ${{ github.workspace }}/log.html
+
+      - name: "Add summary with Robot log artifact link"
+        if: always()
+        run: |
+          echo "### 📝 Robot Framework Log" >> $GITHUB_STEP_SUMMARY
+          echo "You can download the [Robot log.html artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) from the Artifacts section below." >> $GITHUB_STEP_SUMMARY
+
+      - name: "Clean up"
+        if: always()
+        run: |
+          docker stop homeassistant 2>/dev/null || true
+          docker rm homeassistant 2>/dev/null || true
+          docker stop simple-https-server 2>/dev/null || true
+          docker rm simple-https-server 2>/dev/null || true
+          docker ps -a
+          docker network remove robot 2>/dev/null || true

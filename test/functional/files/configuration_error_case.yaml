@@ -1,0 +1,16 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+logger:
+  default: info
+
+additional_ca:
+  simple_ca: simple-https-server.pem
+
+rest_command:
+  additional_ca_test:
+    url: "https://simple-https-server:4433"
+    method: get
+    verify_ssl: true
+    timeout: 30

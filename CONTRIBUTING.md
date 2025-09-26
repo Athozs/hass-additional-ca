@@ -18,8 +18,16 @@ pip install -U -r requirements_dev.txt
 ```
 
 
-## Run
+## Run Home Assistant with Docker Compose
 
 ```shell
 bash scripts/run-compose.sh
+```
+
+
+## Run pytest
+
+```shell
+pip install -U -r requirements_test.txt
+pytest test/unit/ -v
 ```

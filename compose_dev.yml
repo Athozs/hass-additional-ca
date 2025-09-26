@@ -1,10 +1,7 @@
-version: '3'
-
 services:
-
   hass_dev:
-    image: ghcr.io/home-assistant/home-assistant:2025.5
-    ### Alternative Home-Assistant image
+    image: ghcr.io/home-assistant/home-assistant:2025.9
+    ### Alternative image where Home-Assistant is running with non-root user, so update-ca-certificates cannot be executed
     # image: linuxserver/homeassistant:latest
     container_name: hass_dev
     # network_mode: host
@@ -13,6 +10,6 @@ services:
     environment:
       - TZ=Europe/Paris
       - PYTHONUNBUFFERED=1
-      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+      # - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
     volumes:
       - ./config:/config

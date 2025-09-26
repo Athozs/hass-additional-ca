@@ -1,0 +1,8 @@
+pytest
+pytest-asyncio
+pytest-cov
+robotframework
+robotframework-requests
+
+homeassistant
+aiofiles==24.1.0
