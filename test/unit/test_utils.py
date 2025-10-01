@@ -4,7 +4,7 @@ import pytest
 import ssl
 import subprocess
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, call
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -617,14 +617,36 @@ class TestRemoveUnusedCerts:
         # Mock the iterdir return value
         hass.async_add_executor_job.return_value = [system_file1, system_file2, unused_file]
 
+        # Mock Path objects for different calls
+        mock_ca1_path = MagicMock()
+        mock_ca1_path.name = "ca1.crt"
+        mock_ca2_path = MagicMock()
+        mock_ca2_path.name = "ca2.crt"
         mock_ca_syspath = MagicMock()
-        mock_path.return_value = mock_ca_syspath
+
+        def path_side_effect(path_arg):
+            if path_arg == "ca1.crt":
+                return mock_ca1_path
+            elif path_arg == "ca2.crt":
+                return mock_ca2_path
+            elif path_arg == CA_SYSPATH:
+                return mock_ca_syspath
+            else:
+                return MagicMock()
+
+        mock_path.side_effect = path_side_effect
 
         # Act
         await remove_unused_certs(hass, ca_files)
 
         # Assert
-        mock_path.assert_called_once_with(CA_SYSPATH)
+        # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
+        expected_calls = [
+            call("ca1.crt"),
+            call("ca2.crt"),
+            call(CA_SYSPATH)
+        ]
+        mock_path.assert_has_calls(expected_calls, any_order=True)
         unused_file.unlink.assert_called_once()
         system_file1.unlink.assert_not_called()
         system_file2.unlink.assert_not_called()
@@ -650,14 +672,31 @@ class TestRemoveUnusedCerts:
         # Mock the iterdir return value
         hass.async_add_executor_job.return_value = [system_file1]
 
+        # Mock Path objects for different calls
+        mock_ca1_path = MagicMock()
+        mock_ca1_path.name = "ca1.crt"
         mock_ca_syspath = MagicMock()
-        mock_path.return_value = mock_ca_syspath
+
+        def path_side_effect(path_arg):
+            if path_arg == "ca1.crt":
+                return mock_ca1_path
+            elif path_arg == CA_SYSPATH:
+                return mock_ca_syspath
+            else:
+                return MagicMock()
+
+        mock_path.side_effect = path_side_effect
 
         # Act
         await remove_unused_certs(hass, ca_files)
 
         # Assert
-        mock_path.assert_called_once_with(CA_SYSPATH)
+        # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
+        expected_calls = [
+            call("ca1.crt"),
+            call(CA_SYSPATH)
+        ]
+        mock_path.assert_has_calls(expected_calls, any_order=True)
         system_file1.unlink.assert_not_called()
 
     @pytest.mark.asyncio
@@ -764,11 +803,28 @@ class TestRemoveUnusedCerts:
         # Mock the iterdir return value as empty
         hass.async_add_executor_job.return_value = []
 
+        # Mock Path objects for different calls
+        mock_ca1_path = MagicMock()
+        mock_ca1_path.name = "ca1.crt"
         mock_ca_syspath = MagicMock()
-        mock_path.return_value = mock_ca_syspath
+
+        def path_side_effect(path_arg):
+            if path_arg == "ca1.crt":
+                return mock_ca1_path
+            elif path_arg == CA_SYSPATH:
+                return mock_ca_syspath
+            else:
+                return MagicMock()
+
+        mock_path.side_effect = path_side_effect
 
         # Act
         await remove_unused_certs(hass, ca_files)
 
         # Assert
-        mock_path.assert_called_once_with(CA_SYSPATH)
+        # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
+        expected_calls = [
+            call("ca1.crt"),
+            call(CA_SYSPATH)
+        ]
+        mock_path.assert_has_calls(expected_calls, any_order=True)
