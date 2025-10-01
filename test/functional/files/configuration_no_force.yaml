@@ -8,7 +8,7 @@ logger:
 additional_ca:
   # force_additional_ca: hellooo
   simple_ca: simple-https-server.pem
-  rapidssl_ca: RapidSSLTLSRSACAG1.crt.pem
+  rapidssl_ca: rapidssl/RapidSSLTLSRSACAG1.crt.pem
   hon_ca: hon_cert.crt
   my_ca_1_missing: dummy.crt
   my_ca_2_invalid_cert: invalid-ca.crt

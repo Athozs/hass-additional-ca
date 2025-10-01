@@ -49,7 +49,7 @@ async def remove_unused_certs(hass: HomeAssistant, config: dict) -> None:
     :type config: dict
     """
 
-    conf_ca_list = [f"{k}_{v}" for k, v in config.items()]
+    conf_ca_list = [f"{k}_{Path(v).name}" for k, v in config.items()]
     system_ca_list = [f for f in await hass.async_add_executor_job(Path(CA_SYSPATH).iterdir) if f.is_file()]
 
     for cert in system_ca_list:

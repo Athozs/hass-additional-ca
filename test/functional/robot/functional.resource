@@ -4,6 +4,7 @@ Documentation     Resource file for functional tests
 Library    Process
 Library    RequestsLibrary
 Library    OperatingSystem
+Library    DateTime
 
 
 *** Variables ***
@@ -43,7 +44,8 @@ Start HomeAssistant container
     ...  -p  8123:8123
     ...  -d
     ...  ghcr.io/home-assistant/home-assistant:stable
-    ${result} =    Process.Run Process    docker  @{docker_run_args}  stdout=stdout_docker_run2.txt  stderr=STDOUT
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker  @{docker_run_args}  stdout=stdout_docker_run_${timestamp}.txt  stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
     Log To Console  container homeassistant ${result.stdout} created
     Wait Until Keyword Succeeds    120s    5s    Wait Until Additional CA integration is loaded
@@ -52,7 +54,8 @@ Start HomeAssistant container
 
 Stop HomeAssistant container
     @{docker_stop_args} =  Create List  stop  homeassistant
-    ${result} =    Process.Run Process    docker  @{docker_stop_args}  stdout=stdout_docker_stop.txt  stderr=STDOUT
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker  @{docker_stop_args}  stdout=stdout_docker_stop_${timestamp}.txt  stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
     Wait Until Keyword Succeeds    30s    2s    Container Should Not Exist    homeassistant
     Log To Console  container ${result.stdout} stopped
@@ -112,7 +115,8 @@ Container Should Not Exist
     ...    -a
     ...    --filter    name=${container_name}
     ...    --format    {{.Names}}
-    ${result} =    Process.Run Process    docker    @{docker_run_args}    stdout=stdout_docker_ps.txt    stderr=STDOUT
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker    @{docker_run_args}    stdout=stdout_docker_ps_${timestamp}.txt    stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
     Should Not Contain    ${result.stdout}    ${container_name}
 
@@ -133,3 +137,29 @@ HomeAssistant Logs Should Match Regex
     [Arguments]    ${regex}
     ${log_content} =    OperatingSystem.Get File    test/functional/files/config/home-assistant.log
     Should Match Regexp    ${log_content}    ${regex}    msg=HomeAssistant logs do not contain the expected regex: '${regex}'    values=False
+
+
+Certificate Should Exist in HomeAssistant
+    [Arguments]    ${filename}
+    @{docker_exec_args} =  Create List
+    ...    exec
+    ...    homeassistant
+    ...    ls
+    ...    /usr/local/share/ca-certificates
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
+    Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    ${filename}
+
+
+Certificate Should Not Exist in HomeAssistant
+    [Arguments]    ${filename}
+    @{docker_exec_args} =  Create List
+    ...    exec
+    ...    homeassistant
+    ...    ls
+    ...    /usr/local/share/ca-certificates
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
+    Should Be Equal As Integers    ${result.rc}    0
+    Should Not Contain    ${result.stdout}    ${filename}

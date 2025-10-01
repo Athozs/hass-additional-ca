@@ -38,9 +38,14 @@ Remove unused Certificates
     Attempt to restart HomeAssistant
     HomeAssistant Logs Should Not Contain    Forcing load of
     HomeAssistant Logs Should Not Contain    Removing unused certificate
+    Certificate Should Exist in HomeAssistant    hon_ca_hon_cert.crt
+    Certificate Should Exist in HomeAssistant    rapidssl_ca_RapidSSLTLSRSACAG1.crt.pem
     Copy File    test/functional/files/configuration_base.yaml    test/functional/files/config/configuration.yaml
     Attempt to restart HomeAssistant
     HomeAssistant Logs Should Contain    Removing unused certificate: hon_ca_hon_cert.crt
     HomeAssistant Logs Should Contain    Removing unused certificate: rapidssl_ca_RapidSSLTLSRSACAG1.crt.pem
+    Certificate Should Not Exist in HomeAssistant    hon_ca_hon_cert.crt
+    Certificate Should Not Exist in HomeAssistant    rapidssl_ca_RapidSSLTLSRSACAG1.crt.pem
+    Certificate Should Exist in HomeAssistant    simple_ca_simple-https-server.pem
     ${response} =  Wait Until Keyword Succeeds    120s    10s    Run HomeAssistant Action Rest Command    additional_ca_test
     Should Be Equal As Strings    200  ${response.json()}[service_response][status]
