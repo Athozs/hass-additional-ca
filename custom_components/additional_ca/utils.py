@@ -40,6 +40,33 @@ def remove_additional_ca(ca_filename: str) -> None:
         raise
 
 
+async def remove_unused_certs(hass: HomeAssistant, config: dict) -> None:
+    """Remove unused certificates from CA_SYSPATH
+
+    :param hass: hass object from HomeAssistant core
+    :type hass: HomeAssistant
+    :param config: additional_ca config
+    :type config: dict
+    """
+
+    conf_ca_list = [f"{k}_{v}" for k, v in config.items()]
+    system_ca_list = [f for f in await hass.async_add_executor_job(Path(CA_SYSPATH).iterdir) if f.is_file()]
+
+    for cert in system_ca_list:
+        if cert.name not in conf_ca_list:
+            log.info(f"Removing unused certificate: {cert.name}")
+            try:
+                cert.unlink()
+            except FileNotFoundError:
+                log.warning(f"Certificate file {cert.name} was already removed.")
+            except PermissionError:
+                log.error(f"Permission denied when removing unused certificate file: {cert.name}")
+                raise
+            except Exception as err:
+                log.error(f"Error removing unused certificate file {cert.name}: {str(err)}")
+                raise
+
+
 async def copy_ca_to_system(hass: HomeAssistant, ca_name: str, ca_src_path: Path) -> str:
     """Copy cert file into system CA path with a unique name to avoid
     overriding existing CA with the same name.

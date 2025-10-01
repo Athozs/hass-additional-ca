@@ -21,7 +21,7 @@ Normal Suite Setup
 
 
 Error Suite Setup
-    OperatingSystem.Copy File    test/functional/files/configuration_error_case.yaml    test/functional/files/config/configuration.yaml
+    OperatingSystem.Copy File    test/functional/files/configuration_base.yaml    test/functional/files/config/configuration.yaml
     Start HomeAssistant container
 
 
@@ -95,6 +95,7 @@ Run HomeAssistant Action Rest Command
 
 
 Attempt to restart HomeAssistant
+    [Documentation]    Restart HomeAssistant from API and wait for Additional CA integration to be loaded
     ${headers}  Create Dictionary
     ...    Authorization=Bearer ${HASS_TOKEN}
     ...    Content-Type=application/json
