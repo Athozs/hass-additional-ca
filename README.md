@@ -453,7 +453,9 @@ additional_ca:
 
 Optionally, remove your private CA file from the `config/additional_ca/` directory.
 
-Then, reset system CA of Home Assistant, see section [Reset CA trust store of Home Assistant](#92-reset-ca-trust-store-of-home-assistant) in this README.md.
+On the next restart of Home Assistant, the _Additional CA_ integration will remove unused CA from system CA trust store, ensuring that only the active CA entries under the `additional_ca` domain key in `configuration.yaml` will be loaded.
+
+Alternatively, you could reset system CA of Home Assistant, see section [Reset CA trust store of Home Assistant](#92-reset-ca-trust-store-of-home-assistant) in this README.md.
 
 
 ## 8. UNINSTALL
