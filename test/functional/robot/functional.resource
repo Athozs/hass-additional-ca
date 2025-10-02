@@ -48,7 +48,7 @@ Start HomeAssistant container
     ${result} =    Process.Run Process    docker  @{docker_run_args}  stdout=stdout_docker_run_${timestamp}.txt  stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
     Log To Console  container homeassistant ${result.stdout} created
-    Wait Until Keyword Succeeds    120s    5s    Wait Until Additional CA integration is loaded
+    Wait Until Keyword Succeeds    120s    5s    Additional CA integration is loaded
     RETURN    ${result.stdout}
 
 
@@ -57,13 +57,9 @@ Stop HomeAssistant container
     ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
     ${result} =    Process.Run Process    docker  @{docker_stop_args}  stdout=stdout_docker_stop_${timestamp}.txt  stderr=STDOUT
     Should Be Equal As Integers    ${result.rc}    0
-    Wait Until Keyword Succeeds    30s    2s    Container Should Not Exist    homeassistant
+    Wait Until Keyword Succeeds    30s    3s    Container Should Not Exist    homeassistant
     Log To Console  container ${result.stdout} stopped
     RETURN    ${result.stdout}
-
-
-Wait Until Additional CA integration is loaded
-    Wait Until Keyword Succeeds    120s    5s    Additional CA integration is loaded
 
 
 Additional CA integration is loaded
@@ -99,13 +95,14 @@ Run HomeAssistant Action Rest Command
 
 Attempt to restart HomeAssistant
     [Documentation]    Clean home-assistant.log file, then restart HomeAssistant from API and wait for Additional CA integration to be loaded
-    Remove HomeAssistant Logs File
+    Clean HomeAssistant Logs File
     ${headers}  Create Dictionary
     ...    Authorization=Bearer ${HASS_TOKEN}
     ...    Content-Type=application/json
     ${response} =    Wait Until Keyword Succeeds    120s    5s    RequestsLibrary.POST  http://localhost:8123/api/services/homeassistant/restart
     ...  headers=${headers}
-    Wait Until Additional CA integration is loaded
+    Wait Until Keyword Succeeds    120s    5s    Additional CA integration is loaded
+    Wait Until Keyword Succeeds    60s     5s    File Should Exist    test/functional/files/config/home-assistant.log
     RETURN  ${response}
 
 
@@ -166,7 +163,7 @@ Certificate Should Not Exist in HomeAssistant
     Should Not Contain    ${result.stdout}    ${filename}
 
 
-Remove HomeAssistant Logs File
+Clean HomeAssistant Logs File
     @{docker_exec_args} =  Create List
     ...    exec
     ...    homeassistant
@@ -175,3 +172,4 @@ Remove HomeAssistant Logs File
     ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
     ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
     # no need to check result returned code == 0
+    OperatingSystem.Create File    test/functional/files/config/home-assistant.log
