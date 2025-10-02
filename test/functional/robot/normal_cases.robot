@@ -26,7 +26,7 @@ Make an HTTPS request with Custom CA on hon-smarthome.com
 
 
 Forcing Load of Certificates
-    [Setup]  Copy File    test/functional/files/configuration_force_additional_ca.yaml    test/functional/files/config/configuration.yaml
+    Copy File    test/functional/files/configuration_force_additional_ca.yaml    test/functional/files/config/configuration.yaml
     Attempt to restart HomeAssistant
     HomeAssistant Logs Should Contain    Forcing load of
     ${response} =  Wait Until Keyword Succeeds    120s    10s    Run HomeAssistant Action Rest Command    additional_ca_test
@@ -34,7 +34,7 @@ Forcing Load of Certificates
 
 
 Remove unused Certificates
-    [Setup]  Copy File    test/functional/files/configuration_no_force.yaml    test/functional/files/config/configuration.yaml
+    Copy File    test/functional/files/configuration_no_force.yaml    test/functional/files/config/configuration.yaml
     Attempt to restart HomeAssistant
     HomeAssistant Logs Should Not Contain    Forcing load of
     HomeAssistant Logs Should Not Contain    Removing unused certificate
