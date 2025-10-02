@@ -164,6 +164,21 @@ Certificate Should Not Exist in HomeAssistant
     Should Not Contain    ${result.stdout}    ${filename}
 
 
+Get Change Time of Certificate
+    [Arguments]    ${filename}
+    @{docker_exec_args} =  Create List
+    ...    exec
+    ...    homeassistant
+    ...    stat
+    ...    -c
+    ...    "%Z"
+    ...    /usr/local/share/ca-certificates/${filename}
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
+    Should Be Equal As Integers    ${result.rc}    0
+    RETURN  ${result.stdout}
+
+
 Clean HomeAssistant Logs File
     @{docker_exec_args} =  Create List
     ...    exec
