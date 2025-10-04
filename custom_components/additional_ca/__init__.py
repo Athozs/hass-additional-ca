@@ -103,8 +103,6 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
 
     await remove_unused_certs(hass, conf)
 
-    await remove_unused_certs(hass, conf)
-
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():
         log.info(f"Processing CA: {ca_key} ({ca_value})")
