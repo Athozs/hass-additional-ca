@@ -20,6 +20,7 @@ from .utils import (
     get_serial_number_from_cert,
     log,
     remove_additional_ca,
+    remove_unused_certs,
     update_system_ca,
 )
 
@@ -104,6 +105,8 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
     conf = config.get(DOMAIN)
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
     force_additional_ca = conf.pop(FORCE_ADDITIONAL_CA, None)
+
+    await remove_unused_certs(hass, conf)
 
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():

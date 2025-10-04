@@ -4,7 +4,7 @@ import pytest
 import ssl
 import subprocess
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, call
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -19,6 +19,7 @@ from custom_components.additional_ca.utils import (
     get_issuer_common_name,
     get_serial_number_from_cert,
     validate_serial_number,
+    remove_unused_certs,
 )
 from custom_components.additional_ca.exceptions import SerialNumberException
 from custom_components.additional_ca.const import (
@@ -584,3 +585,246 @@ class TestValidateSerialNumber:
             validate_serial_number(ca_filename, serial_number)
 
         mock_log.error.assert_called_once_with("The Serial Number of CA 'test_ca.crt' is empty.")
+
+
+class TestRemoveUnusedCerts:
+    """Test cases for remove_unused_certs function."""
+
+    @pytest.mark.asyncio
+    @patch("custom_components.additional_ca.utils.Path")
+    @patch("custom_components.additional_ca.utils.log")
+    async def test_remove_unused_certs_success(self, mock_log, mock_path):
+        """Test successful removal of unused certificates."""
+        # Arrange
+        hass = MagicMock(spec=HomeAssistant)
+        hass.async_add_executor_job = AsyncMock()
+        ca_files = {
+            "ca1": "ca1.crt",
+            "ca2": "ca2.crt"
+        }
+
+        # Mock system files
+        system_file1 = MagicMock()
+        system_file1.name = "ca1_ca1.crt"
+        system_file1.is_file.return_value = True
+        system_file2 = MagicMock()
+        system_file2.name = "ca2_ca2.crt"
+        system_file2.is_file.return_value = True
+        unused_file = MagicMock()
+        unused_file.name = "unused_ca.crt"
+        unused_file.is_file.return_value = True
+
+        # Mock the iterdir return value
+        hass.async_add_executor_job.return_value = [system_file1, system_file2, unused_file]
+
+        # Mock Path objects for different calls
+        mock_ca1_path = MagicMock()
+        mock_ca1_path.name = "ca1.crt"
+        mock_ca2_path = MagicMock()
+        mock_ca2_path.name = "ca2.crt"
+        mock_ca_syspath = MagicMock()
+
+        def path_side_effect(path_arg):
+            if path_arg == "ca1.crt":
+                return mock_ca1_path
+            elif path_arg == "ca2.crt":
+                return mock_ca2_path
+            elif path_arg == CA_SYSPATH:
+                return mock_ca_syspath
+            else:
+                return MagicMock()
+
+        mock_path.side_effect = path_side_effect
+
+        # Act
+        await remove_unused_certs(hass, ca_files)
+
+        # Assert
+        # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
+        expected_calls = [
+            call("ca1.crt"),
+            call("ca2.crt"),
+            call(CA_SYSPATH)
+        ]
+        mock_path.assert_has_calls(expected_calls, any_order=True)
+        unused_file.unlink.assert_called_once()
+        system_file1.unlink.assert_not_called()
+        system_file2.unlink.assert_not_called()
+        mock_log.info.assert_any_call("Removing unused certificate: unused_ca.crt")
+
+    @pytest.mark.asyncio
+    @patch("custom_components.additional_ca.utils.Path")
+    @patch("custom_components.additional_ca.utils.log")
+    async def test_remove_unused_certs_no_unused_files(self, mock_log, mock_path):
+        """Test when no unused certificates exist."""
+        # Arrange
+        hass = MagicMock(spec=HomeAssistant)
+        hass.async_add_executor_job = AsyncMock()
+        ca_files = {
+            "ca1": "ca1.crt"
+        }
+
+        # Mock system files - all are in use
+        system_file1 = MagicMock()
+        system_file1.name = "ca1_ca1.crt"
+        system_file1.is_file.return_value = True
+
+        # Mock the iterdir return value
+        hass.async_add_executor_job.return_value = [system_file1]
+
+        # Mock Path objects for different calls
+        mock_ca1_path = MagicMock()
+        mock_ca1_path.name = "ca1.crt"
+        mock_ca_syspath = MagicMock()
+
+        def path_side_effect(path_arg):
+            if path_arg == "ca1.crt":
+                return mock_ca1_path
+            elif path_arg == CA_SYSPATH:
+                return mock_ca_syspath
+            else:
+                return MagicMock()
+
+        mock_path.side_effect = path_side_effect
+
+        # Act
+        await remove_unused_certs(hass, ca_files)
+
+        # Assert
+        # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
+        expected_calls = [
+            call("ca1.crt"),
+            call(CA_SYSPATH)
+        ]
+        mock_path.assert_has_calls(expected_calls, any_order=True)
+        system_file1.unlink.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("custom_components.additional_ca.utils.Path")
+    @patch("custom_components.additional_ca.utils.log")
+    async def test_remove_unused_certs_file_not_found(self, mock_log, mock_path):
+        """Test removal when file doesn't exist."""
+        # Arrange
+        hass = MagicMock(spec=HomeAssistant)
+        hass.async_add_executor_job = AsyncMock()
+        ca_files = {}
+
+        unused_file = MagicMock()
+        unused_file.name = "unused_ca.crt"
+        unused_file.is_file.return_value = True
+        unused_file.unlink.side_effect = FileNotFoundError("File not found")
+
+        # Mock the iterdir return value
+        hass.async_add_executor_job.return_value = [unused_file]
+
+        mock_ca_syspath = MagicMock()
+        mock_path.return_value = mock_ca_syspath
+
+        # Act
+        await remove_unused_certs(hass, ca_files)
+
+        # Assert
+        unused_file.unlink.assert_called_once()
+        mock_log.warning.assert_called_once_with(
+            "Certificate file unused_ca.crt was already removed."
+        )
+
+    @pytest.mark.asyncio
+    @patch("custom_components.additional_ca.utils.Path")
+    @patch("custom_components.additional_ca.utils.log")
+    async def test_remove_unused_certs_permission_error(self, mock_log, mock_path):
+        """Test removal with permission error."""
+        # Arrange
+        hass = MagicMock(spec=HomeAssistant)
+        hass.async_add_executor_job = AsyncMock()
+        ca_files = {}
+
+        unused_file = MagicMock()
+        unused_file.name = "unused_ca.crt"
+        unused_file.is_file.return_value = True
+        unused_file.unlink.side_effect = PermissionError("Permission denied")
+
+        # Mock the iterdir return value
+        hass.async_add_executor_job.return_value = [unused_file]
+
+        mock_ca_syspath = MagicMock()
+        mock_path.return_value = mock_ca_syspath
+
+        # Act & Assert
+        with pytest.raises(PermissionError):
+            await remove_unused_certs(hass, ca_files)
+
+        unused_file.unlink.assert_called_once()
+        mock_log.error.assert_called_once_with(
+            "Permission denied when removing unused certificate file: unused_ca.crt"
+        )
+
+    @pytest.mark.asyncio
+    @patch("custom_components.additional_ca.utils.Path")
+    @patch("custom_components.additional_ca.utils.log")
+    async def test_remove_unused_certs_other_exception(self, mock_log, mock_path):
+        """Test removal with other exception."""
+        # Arrange
+        hass = MagicMock(spec=HomeAssistant)
+        hass.async_add_executor_job = AsyncMock()
+        ca_files = {}
+
+        unused_file = MagicMock()
+        unused_file.name = "unused_ca.crt"
+        unused_file.is_file.return_value = True
+        unused_file.unlink.side_effect = OSError("Disk error")
+
+        # Mock the iterdir return value
+        hass.async_add_executor_job.return_value = [unused_file]
+
+        mock_ca_syspath = MagicMock()
+        mock_path.return_value = mock_ca_syspath
+
+        # Act & Assert
+        with pytest.raises(OSError):
+            await remove_unused_certs(hass, ca_files)
+
+        unused_file.unlink.assert_called_once()
+        mock_log.error.assert_called_once_with(
+            "Error removing unused certificate file unused_ca.crt: Disk error"
+        )
+
+    @pytest.mark.asyncio
+    @patch("custom_components.additional_ca.utils.Path")
+    async def test_remove_unused_certs_empty_system_directory(self, mock_path):
+        """Test when system directory is empty."""
+        # Arrange
+        hass = MagicMock(spec=HomeAssistant)
+        hass.async_add_executor_job = AsyncMock()
+        ca_files = {
+            "ca1": "ca1.crt"
+        }
+
+        # Mock the iterdir return value as empty
+        hass.async_add_executor_job.return_value = []
+
+        # Mock Path objects for different calls
+        mock_ca1_path = MagicMock()
+        mock_ca1_path.name = "ca1.crt"
+        mock_ca_syspath = MagicMock()
+
+        def path_side_effect(path_arg):
+            if path_arg == "ca1.crt":
+                return mock_ca1_path
+            elif path_arg == CA_SYSPATH:
+                return mock_ca_syspath
+            else:
+                return MagicMock()
+
+        mock_path.side_effect = path_side_effect
+
+        # Act
+        await remove_unused_certs(hass, ca_files)
+
+        # Assert
+        # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
+        expected_calls = [
+            call("ca1.crt"),
+            call(CA_SYSPATH)
+        ]
+        mock_path.assert_has_calls(expected_calls, any_order=True)
