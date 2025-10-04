@@ -5,6 +5,7 @@ Library    Process
 Library    RequestsLibrary
 Library    OperatingSystem
 Library    DateTime
+Library    String
 
 
 *** Variables ***
@@ -15,7 +16,7 @@ ${HASS_TOKEN} =  to_be_overridden
 *** Keywords ***
 
 Normal Suite Setup
-    OperatingSystem.Copy File    test/functional/files/configuration_no_force.yaml    test/functional/files/config/configuration.yaml
+    OperatingSystem.Copy File    test/functional/files/configuration_test_cases.yaml    test/functional/files/config/configuration.yaml
     Start HomeAssistant container
     # HomeAssistant needs to be restarted to take new CAs into account
     Attempt to restart HomeAssistant
@@ -189,3 +190,31 @@ Clean HomeAssistant Logs File
     ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
     # no need to check result returned code == 0
     OperatingSystem.Create File    test/functional/files/config/home-assistant.log
+
+
+List CAs in HomeAssistant
+    @{docker_exec_args} =  Create List
+    ...    exec
+    ...    homeassistant
+    ...    ls  -A1  /usr/local/share/ca-certificates/
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
+    Should Be Equal As Integers    ${result.rc}    0
+    RETURN  ${result.stdout}
+
+
+Count CA in HomeAssistant
+    ${certs_list} =  List CAs in HomeAssistant
+    Log    CA list in /usr/local/share/ca-certificates/:\n${certs_list}
+    @{docker_exec_args} =  Create List
+    ...    exec
+    ...    homeassistant
+    ...    find  /usr/local/share/ca-certificates/
+    ...    -maxdepth  1
+    ...    -type  f
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
+    Should Be Equal As Integers    ${result.rc}    0
+    ${lines} =    String.Split String    ${result.stdout}    \n
+    ${count} =    Get Length    ${lines}
+    RETURN  ${count}
