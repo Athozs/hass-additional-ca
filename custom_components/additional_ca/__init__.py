@@ -14,7 +14,6 @@ from .const import CONFIG_SUBDIR, DOMAIN, FORCE_ADDITIONAL_CA
 from .exceptions import SerialNumberException
 from .utils import (
     check_hass_ssl_context,
-    check_ssl_context_by_serial_number,
     copy_ca_to_system,
     get_issuer_common_name,
     get_serial_number_from_cert,
@@ -26,15 +25,9 @@ from .utils import (
 
 CONFIG_SCHEMA = vol.Schema(
     {
-        DOMAIN: vol.Schema(
-            {
-                # Valid true values for force_additional_ca are: True, true, 1, yes, on
-                vol.Optional(FORCE_ADDITIONAL_CA, default=False): cv.boolean,
-            },
-            extra=vol.ALLOW_EXTRA,
-        )
+        DOMAIN: {cv.string: cv.string}
     },
-    extra=vol.ALLOW_EXTRA,
+    extra=vol.ALLOW_EXTRA
 )
 
 
@@ -98,13 +91,15 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
     :type config: ConfigType
     :raises Exception: if unable to check SSL Context for CA
     :raises Exception: if unable to update system CA
-    :return: a dict like {'cert filename': 'cert identifier'}
+    :return: a dict like {'cert filename': 'cert serial_number'}
     :rtype: dict[str, str]
     """
 
     conf = config.get(DOMAIN)
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
-    force_additional_ca = conf.pop(FORCE_ADDITIONAL_CA, None)
+
+    # Ignore deprecated option 'force_additional_ca' (boolean) from config
+    conf.pop(FORCE_ADDITIONAL_CA, None)
 
     await remove_unused_certs(hass, conf)
 
@@ -124,31 +119,18 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
         log.info(f"{ca_key} ({ca_value}) Issuer Common Name: {common_name}")
 
         try:
-            identifier = await get_serial_number_from_cert(hass, additional_ca_fullpath)
+            serial_number = await get_serial_number_from_cert(hass, additional_ca_fullpath)
         except SerialNumberException:
             # let's process the next custom CA if CA does not contain a serial number
             continue
         except Exception:
-            log.error(f"Could not check SSL Context for CA: {ca_key} ({ca_value}).")
             raise
-
-        log.info(f"{ca_key} ({ca_value}) Serial Number: {identifier}")
-
-        log.info(f"Checking presence of {ca_key} ({ca_value}) Serial Number '{identifier}' in SSL Context ")
-        # check presence of CA in Home Assistant SSL Context
-        ca_already_loaded = await check_ssl_context_by_serial_number(ca_value, identifier)
 
         # add CA to be checked in the global SSL Context at the end
         ca_files_dict[ca_value] = {}
-        ca_files_dict[ca_value]["serial_number"] = identifier
+        ca_files_dict[ca_value]["serial_number"] = serial_number
         ca_files_dict[ca_value]["common_name"] = common_name
 
-        if force_additional_ca:
-            log.info(f"Forcing load of {ca_key} ({ca_value}).")
-        elif ca_already_loaded:
-            log.info(f"{ca_key} ({ca_value}) -> already loaded.")
-            # process the next custom CA
-            continue
 
         ca_id = await copy_ca_to_system(hass, ca_key, additional_ca_fullpath)
         try:

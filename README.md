@@ -279,20 +279,6 @@ additional_ca:
 # ...
 ```
 
-You can force the integration to load additional CAs, even if they already exist in the system CA trust store, by setting the `force_additional_ca` option to `true`. Accepted values for `true` include: `True`, `true`, `1`, `yes`, and `on`.
-
-Example:
-
-```yaml
-# configuration.yaml
----
-default_config:
-additional_ca:
-  some_ca: my_ca.crt
-  force_additional_ca: true
-# ...
-```
-
 Model:
 
 ```yaml
@@ -301,7 +287,6 @@ Model:
 default_config:
 additional_ca:
   <string>: <Certificate filename or Certificate relative path as string>
-  force_additional_ca: true  # Optional, boolean
   # ...: ...
 ```
 
@@ -312,7 +297,6 @@ Another example:
 ---
 default_config:
 additional_ca:
-  force_additional_ca: true                        # Optional, boolean
   some_ca: my_ca.crt                               # a cert file
   ca_foo: some_folder/ca2.pem                      # relative path + a cert file
   ca_bar: some_folder/ca3.crt                      # relative path + a cert file

@@ -1,11 +1,13 @@
 
-# Loads default set of integrations. Do not remove.
 default_config:
 
 logger:
   default: info
 
 additional_ca:
+  # keep in test case the deprecated option 'force_additional_ca: true' to confirm it is ignored by the integration code
+  # it should not raise any exception
+  force_additional_ca: true
   simple_ca: simple-https-server.pem
 
 rest_command:
