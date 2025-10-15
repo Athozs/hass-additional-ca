@@ -1,9 +1,8 @@
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Athozs/hass-additional-ca/validate.yml?branch=main&style=for-the-badge&label=Home%20Assistant%20stable%20|%20Validation)
+![GitHub Downloads](https://img.shields.io/github/downloads/Athozs/hass-additional-ca/total?label=Total%20Downloads&style=for-the-badge)
+
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-<!-- ![Total downloads](https://img.shields.io/github/downloads/athozs/hass-additional-ca/total) -->
-<!--
-[![Release version](https://img.shields.io/github/v/release/Athozs/hass-additional-ca?color=brightgreen&label=Download&style=for-the-badge)](https://github.com/Athozs/hass-additional-ca/releases/latest/download/additional_ca.zip "Download")
--->
 
 <p align="center">
   <img src="img/hass-additional-ca-icon.png" />
@@ -162,7 +161,7 @@ cp -r additional_ca config/custom_components/
 
 #### 2.1.3 Download and install manually
 
-- Click the button to download the ZIP archive of _Additional CA_ [![Release version](https://img.shields.io/github/v/release/Athozs/hass-additional-ca?color=brightgreen&label=Download&style=for-the-badge)](https://github.com/Athozs/hass-additional-ca/releases/latest/download/additional_ca.zip "Download")
+- Click the button to download the ZIP archive of _Additional CA_ [![Release version](https://img.shields.io/github/v/release/Athozs/hass-additional-ca?color=brightgreen&label=Download%20latest%20ZIP%20archive)](https://github.com/Athozs/hass-additional-ca/releases/latest/download/additional_ca.zip "Download")
 - Unzip the archive.
 - Move the `additional_ca` folder into the `config/custom_components/` directory.
 - Installation is done. Now, see the section [Configuration](#3-configuration) in this README.md.
