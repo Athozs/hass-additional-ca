@@ -50,6 +50,7 @@ Start HomeAssistant container
     Should Be Equal As Integers    ${result.rc}    0
     Log To Console  container homeassistant ${result.stdout} created
     Wait Until Keyword Succeeds    120s    5s    Additional CA integration is loaded
+    Log HomeAssistant Version to console
     RETURN    ${result.stdout}
 
 
@@ -218,3 +219,14 @@ Count CA in HomeAssistant
     ${lines} =    String.Split String    ${result.stdout}    \n
     ${count} =    Get Length    ${lines}
     RETURN  ${count}
+
+Log HomeAssistant Version to console
+    @{docker_exec_args} =  Create List
+    ...    exec
+    ...    homeassistant
+    ...    cat  /config/.HA_VERSION
+    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+    ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
+    Should Be Equal As Integers    ${result.rc}    0
+    Log To Console    Home-Assistant Version: ${result.stdout}
+    RETURN  ${result.stdout}
