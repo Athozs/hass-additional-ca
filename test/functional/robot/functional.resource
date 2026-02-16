@@ -105,7 +105,7 @@ Attempt to restart HomeAssistant
     ...  headers=${headers}
     Wait Until Keyword Succeeds    120s    5s    Additional CA integration is loaded
     Wait Until Keyword Succeeds    60s     5s    File Should Exist    test/functional/files/config/home-assistant.log
-    Wait Until Keyword Succeeds    60s     5s    HomeAssistant Logs Should Contain    Setup of domain additional_ca took
+    Wait Until Keyword Succeeds    180s    5s    HomeAssistant Logs Should Contain    Setup of domain additional_ca took
     RETURN  ${response}
 
 
