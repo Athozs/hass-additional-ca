@@ -93,12 +93,14 @@ jobs:
             --log log.html \
             ${{ github.workspace }}/test/functional/robot/
 
-      - name: "Upload Robot log.html as artifact"
+      - name: "Upload tests logs as artifact"
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: robot-log
-          path: ${{ github.workspace }}/log.html
+          name: tests-log
+          path: |
+            ${{ github.workspace }}/log.html
+            ${{ github.workspace }}/home-assistant*.log
 
       - name: "Add summary with Robot log artifact link"
         if: always()

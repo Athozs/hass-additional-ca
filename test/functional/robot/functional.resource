@@ -31,6 +31,11 @@ Custom Suite Teardown
     Stop HomeAssistant container
 
 
+Custom Test Teardown
+    [Arguments]    ${test_name}
+    Backup HomeAssistant Logs  ${test_name}
+
+
 Start HomeAssistant container
     [Arguments]    ${environment_var}=foo=bar
     @{docker_run_args} =  Create List
@@ -97,7 +102,7 @@ Run HomeAssistant Action Rest Command
 
 Attempt to restart HomeAssistant
     [Documentation]    Clean home-assistant.log file, then restart HomeAssistant from API and wait for Additional CA integration to be loaded
-    Clean HomeAssistant Logs File
+    # Clean HomeAssistant Logs File
     ${headers}  Create Dictionary
     ...    Authorization=Bearer ${HASS_TOKEN}
     ...    Content-Type=application/json
@@ -181,16 +186,16 @@ Get Change Time of Certificate
     RETURN  ${result.stdout}
 
 
-Clean HomeAssistant Logs File
-    @{docker_exec_args} =  Create List
-    ...    exec
-    ...    homeassistant
-    ...    rm
-    ...    /config/home-assistant.log
-    ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
-    ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
-    # no need to check result returned code == 0
-    OperatingSystem.Create File    test/functional/files/config/home-assistant.log
+# Clean HomeAssistant Logs File
+#     @{docker_exec_args} =  Create List
+#     ...    exec
+#     ...    homeassistant
+#     ...    rm
+#     ...    /config/home-assistant.log
+#     ${timestamp} =    DateTime.Get Current Date    result_format=%Y%m%d-%H%M%S-%f
+#     ${result} =    Process.Run Process    docker    @{docker_exec_args}    stdout=stdout_docker_exec_${timestamp}.txt    stderr=STDOUT
+#     # no need to check result returned code == 0
+#     OperatingSystem.Create File    test/functional/files/config/home-assistant.log
 
 
 List CAs in HomeAssistant
@@ -230,3 +235,10 @@ Log HomeAssistant Version to console
     Should Be Equal As Integers    ${result.rc}    0
     Log To Console    Home-Assistant Version: ${result.stdout}
     RETURN  ${result.stdout}
+
+Backup HomeAssistant Logs
+    [Arguments]    ${test_name}
+    ${date_now} =    DateTime.Get Current Date    result_format=%Y-%m-%d_%H-%M-%S-%f
+    ${log_content} =    OperatingSystem.Get File    test/functional/files/config/home-assistant.log
+    ${new_content} =    Catenate    SEPARATOR=\n    Test Name: ${test_name}    ${log_content}
+    OperatingSystem.Create File    home-assistant_${date_now}.log    ${new_content}
