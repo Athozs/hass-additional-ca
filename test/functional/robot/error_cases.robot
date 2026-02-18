@@ -6,6 +6,8 @@ Resource  functional.resource
 Suite Setup  Error Suite Setup
 Suite Teardown  Custom Suite Teardown
 
+Test Teardown    Custom Test Teardown    ${TEST NAME}
+
 
 *** Test Cases ***
 

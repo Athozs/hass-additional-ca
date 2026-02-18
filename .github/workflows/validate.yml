@@ -100,7 +100,7 @@ jobs:
           name: tests-log
           path: |
             ${{ github.workspace }}/log.html
-            ${{ github.workspace }}/test/functional/files/config/home-assistant.log
+            ${{ github.workspace }}/home-assistant*.log
 
       - name: "Add summary with Robot log artifact link"
         if: always()

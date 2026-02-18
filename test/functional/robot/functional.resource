@@ -31,6 +31,11 @@ Custom Suite Teardown
     Stop HomeAssistant container
 
 
+Custom Test Teardown
+    [Arguments]    ${test_name}
+    Backup HomeAssistant Logs  ${test_name}
+
+
 Start HomeAssistant container
     [Arguments]    ${environment_var}=foo=bar
     @{docker_run_args} =  Create List
@@ -230,3 +235,10 @@ Log HomeAssistant Version to console
     Should Be Equal As Integers    ${result.rc}    0
     Log To Console    Home-Assistant Version: ${result.stdout}
     RETURN  ${result.stdout}
+
+Backup HomeAssistant Logs
+    [Arguments]    ${test_name}
+    ${date_now} =    DateTime.Get Current Date    result_format=%Y-%m-%d_%H-%M-%S-%f
+    ${log_content} =    OperatingSystem.Get File    test/functional/files/config/home-assistant.log
+    ${new_content} =    Catenate    SEPARATOR=\n    Test Name: ${test_name}    ${log_content}
+    OperatingSystem.Create File    home-assistant_${date_now}.log    ${new_content}
