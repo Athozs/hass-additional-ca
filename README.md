@@ -66,9 +66,8 @@ __Table of contents__
   - [1. INSTALL WITH HACS](#1-install-with-hacs)
   - [2. INSTALL WITHOUT HACS](#2-install-without-hacs)
     - [2.1. Docker](#21-docker)
-      - [2.1.1. Install using `git`](#211-install-using-git)
-      - [2.1.2. Install using `wget`](#212-install-using-wget)
-      - [2.1.3 Download and install manually](#213-download-and-install-manually)
+      - [2.1.1. Install using `wget`](#211-install-using-wget)
+      - [2.1.2. Download and install manually](#212-download-and-install-manually)
     - [2.2. HAOS - Home Assistant Operating System](#22-haos---home-assistant-operating-system)
     - [2.3. Core](#23-core)
   - [3. CONFIGURATION](#3-configuration)
@@ -125,9 +124,11 @@ If _Additional CA_ integration is not available from HACS interface, install _Ad
 
 ### 2.1. Docker
 
-To install _Additional CA_ integration without HACS, if you're running Home Assistant with Docker, you can use `git` or `wget`.
+<!-- To install _Additional CA_ integration without HACS, if you're running Home Assistant with Docker, you can use `git` or `wget`. -->
 
-#### 2.1.1. Install using `git`
+To install _Additional CA_ integration without HACS, if you're running Home Assistant with Docker, you can use `wget`.
+
+<!-- #### 2.1.1. Install using `git`
 
 Download and install using `git`:
 
@@ -139,12 +140,15 @@ git clone https://github.com/Athozs/hass-additional-ca.git
 # copy additional_ca integration to Home Assistant custom components
 mkdir -p config/custom_components
 cp -r hass-additional-ca/custom_components/additional_ca config/custom_components/
+# (Optional) update Addition CA version in manifest.json
+ADDITIONAL_CA_VERSION=$(wget -qO- https://api.github.com/repos/Athozs/hass-additional-ca/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+sed -i "s/\"version\": \".*\"/\"version\": \"$ADDITIONAL_CA_VERSION\"/" config/custom_components/additional_ca/manifest.json
 # Installation is done, now see section [Configuration](#3-configuration) in this README.md
-```
+``` -->
 
-#### 2.1.2. Install using `wget`
+#### 2.1.1. Install using `wget`
 
-If not installing using `git`, download and install using `wget`:
+Download and install using `wget`:
 
 ```shell
 # move to your Home Assistant directory containing the 'config' folder
@@ -159,7 +163,7 @@ cp -r additional_ca config/custom_components/
 # Installation is done, now see section [Configuration](#3-configuration) in this README.md
 ```
 
-#### 2.1.3 Download and install manually
+#### 2.1.2. Download and install manually
 
 - Click the button to download the ZIP archive of _Additional CA_ [![Release version](https://img.shields.io/github/v/release/Athozs/hass-additional-ca?color=brightgreen&label=Download%20latest%20ZIP%20archive)](https://github.com/Athozs/hass-additional-ca/releases/latest/download/additional_ca.zip "Download")
 - Unzip the archive.

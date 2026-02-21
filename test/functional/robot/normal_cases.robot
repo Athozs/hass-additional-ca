@@ -37,6 +37,7 @@ Make an HTTPS request with Custom CA on hon-smarthome.com
 
 
 Remove unused Certificates
+    [Documentation]  Check that unused certificates are removed at HomeAssistant startup
     Copy File    test/functional/files/configuration_test_cases.yaml    test/functional/files/config/configuration.yaml
     Attempt to restart HomeAssistant
     HomeAssistant Logs Should Not Contain    Forcing load of
