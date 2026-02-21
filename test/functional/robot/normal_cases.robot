@@ -19,10 +19,11 @@ Make an HTTPS request with System CA
 Make an HTTPS request with Custom CA on simple-https-server
     # certificate change time should not be the same after the restart of HomeAssistant because Additional CA integration copies certs on each startup
     ${cert_ctime_1} =  Get Change Time of Certificate    simple_ca_simple-https-server.pem
+    Sleep  2
     Attempt to restart HomeAssistant
     HomeAssistant Logs Should Not Contain    Forcing load of
     ${cert_ctime_2} =  Get Change Time of Certificate    simple_ca_simple-https-server.pem
-    Should Not Be Equal As Strings    ${cert_ctime_1}    ${cert_ctime_2}
+    Should Be True    ${cert_ctime_2} > ${cert_ctime_1}
     ${certs_count} =  Count CA in HomeAssistant
     Should Be Equal As Integers    ${certs_count}    4
     # Make the HTTPS request
