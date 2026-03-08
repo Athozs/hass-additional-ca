@@ -44,6 +44,7 @@ Remove unused Certificates
     HomeAssistant Logs Should Not Contain    Removing unused certificate
     Certificate Should Exist in HomeAssistant    hon_ca_hon_cert.crt
     Certificate Should Exist in HomeAssistant    rapidssl_ca_RapidSSLTLSRSACAG1.crt.pem
+    Sleep    30    # avoid too early false positive code 200 on restart via REST API
     Copy File    test/functional/files/configuration_base.yaml    test/functional/files/config/configuration.yaml
     Attempt to restart HomeAssistant
     HomeAssistant Logs Should Contain    Removing unused certificate: hon_ca_hon_cert.crt
