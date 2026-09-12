@@ -9,14 +9,14 @@ from pathlib import Path
 import aiofiles
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.util.ssl import client_context
 
 from .const import (
     CA_SYSPATH,
     DOMAIN,
-    NEEDS_RESTART_NOTIF_ID,
+    NEEDS_RESTART_ISSUE_ID,
     UPDATE_CA_SYSCMD,
     UPDATE_CA_SYSCMD_OPTIONS,
 )
@@ -114,7 +114,7 @@ def update_system_ca() -> None:
 async def check_hass_ssl_context(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
     """Check if the SSL Context of Home Assistant contains specified CA files.
     If true, logs the cert filename with its identifier (the serial number),
-    if false, logs an error message and create a persistent notification in Home Assistant.
+    if false, logs an error message and creates a fixable repair issue in Home Assistant.
     Returns nothing.
 
     :param hass: hass object from HomeAssistant core
@@ -131,19 +131,27 @@ async def check_hass_ssl_context(hass: HomeAssistant, ca_files: dict[str, str]) 
         common_name = identifers["common_name"]
         contains_custom_ca = await check_ssl_context_by_serial_number(ca_filename, serial_number)
 
-        # create persistent notification if needed
-        notif_id = f"{serial_number}_{NEEDS_RESTART_NOTIF_ID}"
+        # create a repair issue if needed
+        issue_id = f"{serial_number}_{NEEDS_RESTART_ISSUE_ID}"
         if contains_custom_ca:
             log.info(f"SSL Context contains CA '{ca_filename}' with Common Name '{common_name}'.")
-            persistent_notification.async_dismiss(hass, notif_id)
+            ir.async_delete_issue(hass, DOMAIN, issue_id)
         else:
             msg = f"CA '{ca_filename}' with Common Name '{common_name}' is missing in SSL Context. Home Assistant needs to be restarted."
             log.error(msg)
-            persistent_notification.async_create(
+            placeholders = {
+                "ca_filename": ca_filename,
+                "common_name": common_name,
+            }
+            ir.async_create_issue(
                 hass,
-                message=msg,
-                title="Additional CA (custom integration)",
-                notification_id=notif_id
+                DOMAIN,
+                issue_id,
+                is_fixable=True,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="needs_restart",
+                translation_placeholders=placeholders,
+                data=placeholders,
             )
 
 

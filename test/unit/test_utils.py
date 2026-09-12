@@ -24,9 +24,10 @@ from custom_components.additional_ca.utils import (
 from custom_components.additional_ca.exceptions import SerialNumberException
 from custom_components.additional_ca.const import (
     CA_SYSPATH,
+    DOMAIN,
     UPDATE_CA_SYSCMD,
     UPDATE_CA_SYSCMD_OPTIONS,
-    NEEDS_RESTART_NOTIF_ID,
+    NEEDS_RESTART_ISSUE_ID,
 )
 
 
@@ -204,9 +205,9 @@ class TestCheckHassSslContext:
 
     @pytest.mark.asyncio
     @patch("custom_components.additional_ca.utils.check_ssl_context_by_serial_number")
-    @patch("custom_components.additional_ca.utils.persistent_notification")
+    @patch("custom_components.additional_ca.utils.ir")
     @patch("custom_components.additional_ca.utils.log")
-    async def test_check_hass_ssl_context_ca_found(self, mock_log, mock_notification, mock_check_ssl):
+    async def test_check_hass_ssl_context_ca_found(self, mock_log, mock_ir, mock_check_ssl):
         """Test SSL context check when CA is found."""
         # Arrange
         hass = MagicMock(spec=HomeAssistant)
@@ -222,17 +223,18 @@ class TestCheckHassSslContext:
 
         # Assert
         mock_check_ssl.assert_called_once_with("test_ca.crt", "12345678")
-        mock_notification.async_dismiss.assert_called_once_with(
-            hass, f"12345678_{NEEDS_RESTART_NOTIF_ID}"
+        mock_ir.async_delete_issue.assert_called_once_with(
+            hass, DOMAIN, f"12345678_{NEEDS_RESTART_ISSUE_ID}"
         )
+        mock_ir.async_create_issue.assert_not_called()
         mock_log.info.assert_any_call("Finally verifying SSL Context")
         mock_log.info.assert_any_call("Checking SSL Context for Additional CA: test_ca.crt")
 
     @pytest.mark.asyncio
     @patch("custom_components.additional_ca.utils.check_ssl_context_by_serial_number")
-    @patch("custom_components.additional_ca.utils.persistent_notification")
+    @patch("custom_components.additional_ca.utils.ir")
     @patch("custom_components.additional_ca.utils.log")
-    async def test_check_hass_ssl_context_ca_not_found(self, mock_log, mock_notification, mock_check_ssl):
+    async def test_check_hass_ssl_context_ca_not_found(self, mock_log, mock_ir, mock_check_ssl):
         """Test SSL context check when CA is not found."""
         # Arrange
         hass = MagicMock(spec=HomeAssistant)
@@ -248,18 +250,26 @@ class TestCheckHassSslContext:
 
         # Assert
         mock_check_ssl.assert_called_once_with("test_ca.crt", "12345678")
-        mock_notification.async_create.assert_called_once_with(
+        expected_placeholders = {
+            "ca_filename": "test_ca.crt",
+            "common_name": "One Common Name",
+        }
+        mock_ir.async_create_issue.assert_called_once_with(
             hass,
-            message="CA 'test_ca.crt' with Common Name 'One Common Name' is missing in SSL Context. Home Assistant needs to be restarted.",
-            title="Additional CA (custom integration)",
-            notification_id=f"12345678_{NEEDS_RESTART_NOTIF_ID}"
+            DOMAIN,
+            f"12345678_{NEEDS_RESTART_ISSUE_ID}",
+            is_fixable=True,
+            severity=mock_ir.IssueSeverity.WARNING,
+            translation_key="needs_restart",
+            translation_placeholders=expected_placeholders,
+            data=expected_placeholders,
         )
         mock_log.error.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("custom_components.additional_ca.utils.check_ssl_context_by_serial_number")
-    @patch("custom_components.additional_ca.utils.persistent_notification")
-    async def test_check_hass_ssl_context_multiple_cas(self, mock_notification, mock_check_ssl):
+    @patch("custom_components.additional_ca.utils.ir")
+    async def test_check_hass_ssl_context_multiple_cas(self, mock_ir, mock_check_ssl):
         """Test SSL context check with multiple CAs."""
         # Arrange
         hass = MagicMock(spec=HomeAssistant)
@@ -282,10 +292,10 @@ class TestCheckHassSslContext:
         assert mock_check_ssl.call_count == 2
         mock_check_ssl.assert_any_call("ca1.crt", "11111111")
         mock_check_ssl.assert_any_call("ca2.crt", "22222222")
-        mock_notification.async_dismiss.assert_called_once_with(
-            hass, f"11111111_{NEEDS_RESTART_NOTIF_ID}"
+        mock_ir.async_delete_issue.assert_called_once_with(
+            hass, DOMAIN, f"11111111_{NEEDS_RESTART_ISSUE_ID}"
         )
-        mock_notification.async_create.assert_called_once()
+        mock_ir.async_create_issue.assert_called_once()
 
 
 class TestCheckSslContextBySerialNumber:
