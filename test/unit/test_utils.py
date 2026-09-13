@@ -261,7 +261,6 @@ class TestCheckHassSslContext:
             is_fixable=True,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="needs_restart",
-            translation_placeholders=expected_placeholders,
             data=expected_placeholders,
         )
         mock_log.error.assert_called_once()

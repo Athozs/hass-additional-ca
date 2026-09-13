@@ -2,7 +2,6 @@
   "issues": {
     "needs_restart": {
       "title": "Home Assistant needs to be restarted",
-      "description": "CA {ca_filename} with Common Name {common_name} is missing in Home Assistant's SSL Context. Restart Home Assistant to reload it.",
       "fix_flow": {
         "step": {
           "confirm": {

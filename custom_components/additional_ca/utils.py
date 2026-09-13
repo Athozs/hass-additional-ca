@@ -150,7 +150,6 @@ async def check_hass_ssl_context(hass: HomeAssistant, ca_files: dict[str, str]) 
                 is_fixable=True,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key="needs_restart",
-                translation_placeholders=placeholders,
                 data=placeholders,
             )
 
