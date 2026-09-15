@@ -1,0 +1,15 @@
+{
+  "issues": {
+    "needs_restart": {
+      "title": "Home Assistant needs to be restarted",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restart Home Assistant now?",
+            "description": "This will restart Home Assistant so the certificate {ca_filename} (Common Name {common_name}) can be reloaded into the SSL Context."
+          }
+        }
+      }
+    }
+  }
+}
