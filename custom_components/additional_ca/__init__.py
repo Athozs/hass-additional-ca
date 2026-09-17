@@ -96,6 +96,9 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
     """
 
     conf = config.get(DOMAIN)
+    if not conf:
+        return {}
+
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
 
     # Ignore deprecated option 'force_additional_ca' (boolean) from config
