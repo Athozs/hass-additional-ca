@@ -338,7 +338,7 @@ When enabled, the _Additional CA_ integration looks for private Certificate Auth
 
 The _Additional CA_ integration loads private CAs and self-signed certs only at Home Assistant startup.
 
-The _Additional CA_ integration copies the private CAs and self-signed certs to the `/usr/local/share/ca-certificates/` directory inside the container and runs the `update-ca-certificates` command to update the system CA trust store at `/etc/ssl/certs/ca-certificates.crt`. It then loads each CA into the SSL contexts Home Assistant created at startup, so integrations using Home Assistant's shared HTTP clients trust it immediately, without a restart.
+The _Additional CA_ integration copies the private CAs and self-signed certs to the `/usr/local/share/ca-certificates/` directory inside the container and runs the `update-ca-certificates` command to update the system CA trust store at `/etc/ssl/certs/ca-certificates.crt`. The integration then loads each CA into the SSL contexts Home Assistant created at startup, so integrations using Home Assistant's shared HTTP clients trust it immediately, without a restart.
 
 > [!NOTE]
 > In earlier versions of _Additional CA_ (0.4.x and below), you needed to set the `REQUESTS_CA_BUNDLE` environment variable for certificate verification. This is no longer required. The integration now uses the `certifi-linux` Python package, which automatically points Certifi to the system CA trust store at `/etc/ssl/certs/ca-certificates.crt`.
@@ -550,4 +550,4 @@ openssl x509 -in config/additional_ca/my_ca.crt -text -noout
 
 ## 10. KNOWN ISSUES
 
-* Integrations that create their own SSL context instead of using Home Assistant's shared ones may still need a restart before they trust a new CA.
+* Integrations that do not use Home Assistant's shared HTTP clients or SSL contexts (for example, ones that open their own aiohttp session) may still need a restart before they trust a new CA.
