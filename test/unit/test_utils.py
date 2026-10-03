@@ -922,9 +922,7 @@ class TestLoadCaIntoHassSslContexts:
     def test_load_ca_into_hass_ssl_contexts_without_alpn_variants(self, mock_client_context, tmp_path):
         """Test Home Assistant versions that cache one SSL context per cipher list."""
         # Arrange
-        pem = generate_ca_pem()
         ca_path = tmp_path / "test_ca.crt"
-        ca_path.write_text(pem)
 
         # Act
         load_ca_into_hass_ssl_contexts(ca_path)
