@@ -145,7 +145,7 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
             update_system_ca()
             raise
 
-        # trust the CA now rather than after a restart; if this fails, check_hass_ssl_context() still raises the restart repair
+        # trust the CA now rather than after a restart
         try:
             await hass.async_add_executor_job(load_ca_into_hass_ssl_contexts, additional_ca_fullpath)
         except Exception as err:

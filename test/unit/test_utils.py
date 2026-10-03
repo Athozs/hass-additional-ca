@@ -931,7 +931,7 @@ class TestLoadCaIntoHassSslContexts:
 
         # Assert
         assert mock_client_context.call_args_list == [call(c) for c in SSLCipherList]
-        mock_client_context.return_value.load_verify_locations.assert_called_with(cadata=pem)
+        mock_client_context.return_value.load_verify_locations.assert_called_with(ca_path)
         assert mock_client_context.return_value.load_verify_locations.call_count == len(SSLCipherList)
 
     def test_load_ca_into_hass_ssl_contexts_invalid_cert(self, tmp_path):
