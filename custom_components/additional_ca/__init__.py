@@ -17,6 +17,7 @@ from .utils import (
     copy_ca_to_system,
     get_issuer_common_name,
     get_serial_number_from_cert,
+    load_ca_into_hass_ssl_contexts,
     log,
     remove_additional_ca,
     remove_unused_certs,
@@ -143,6 +144,12 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
             remove_additional_ca(ca_id)
             update_system_ca()
             raise
+
+        # trust the CA now rather than after a restart; if this fails, check_hass_ssl_context() still raises the restart repair
+        try:
+            await hass.async_add_executor_job(load_ca_into_hass_ssl_contexts, additional_ca_fullpath)
+        except Exception as err:
+            log.error(f"Unable to load CA '{ca_value}' into the SSL Context of Home Assistant: {str(err)}")
 
         log.info(f"{ca_key} ({ca_value}) -> new CA loaded.")
 

@@ -11,7 +11,19 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.util.ssl import client_context
+from homeassistant.util.ssl import SSLCipherList, client_context
+
+try:
+    from homeassistant.util.ssl import (
+        SSL_ALPN_HTTP11,
+        SSL_ALPN_HTTP11_HTTP2,
+        SSL_ALPN_NONE,
+    )
+except ImportError:
+    # Home Assistant versions without ALPN variants cache one SSL context per cipher list
+    SSL_ALPN_PROTOCOLS = None
+else:
+    SSL_ALPN_PROTOCOLS = (SSL_ALPN_NONE, SSL_ALPN_HTTP11, SSL_ALPN_HTTP11_HTTP2)
 
 from .const import (
     CA_SYSPATH,
@@ -109,6 +121,26 @@ def update_system_ca() -> None:
 
     if status.stderr and "Skipping duplicate certificate" not in status.stderr.decode():
         raise Exception(f"'{UPDATE_CA_SYSCMD}' status returned an error -> {status.stderr.decode().rstrip()}")
+
+
+def load_ca_into_hass_ssl_contexts(ca_path: Path) -> None:
+    """Load a CA into the SSL contexts Home Assistant cached at startup.
+
+    Home Assistant builds its shared SSL contexts from the system CA trust store before integrations are loaded,
+    so updating the store alone only takes effect after a restart. Blocking I/O: run it in the executor.
+
+    :param ca_path: the path of the certificate file
+    :type ca_path: Path
+    :raises ssl.SSLError: if the file is not a valid PEM certificate
+    """
+
+    cadata = ca_path.read_text()
+    for ssl_cipher_list in SSLCipherList:
+        if SSL_ALPN_PROTOCOLS is None:
+            client_context(ssl_cipher_list).load_verify_locations(cadata=cadata)
+            continue
+        for alpn_protocols in SSL_ALPN_PROTOCOLS:
+            client_context(ssl_cipher_list, alpn_protocols).load_verify_locations(cadata=cadata)
 
 
 async def check_hass_ssl_context(hass: HomeAssistant, ca_files: dict[str, str]) -> None:
