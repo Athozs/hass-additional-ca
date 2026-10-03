@@ -12,6 +12,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from homeassistant.core import HomeAssistant
+from homeassistant.util import ssl as hass_ssl
 from homeassistant.util.ssl import (
     SSL_ALPN_HTTP11,
     SSL_ALPN_HTTP11_HTTP2,
@@ -22,6 +23,7 @@ from homeassistant.util.ssl import (
 )
 
 from custom_components.additional_ca.utils import (
+    SSL_ALPN_PROTOCOLS,
     remove_additional_ca,
     copy_ca_to_system,
     update_system_ca,
@@ -210,6 +212,103 @@ class TestUpdateSystemCa:
         # Act & Assert
         with pytest.raises(Exception, match="status returned an error"):
             update_system_ca()
+
+
+def generate_ca_pem() -> str:
+    """Return a newly generated self-signed CA certificate in PEM format."""
+    key = ec.generate_private_key(ec.SECP256R1())
+    name = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "Additional CA unit test")])
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.datetime(2020, 1, 1))
+        .not_valid_after(datetime.datetime(2100, 1, 1))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+        .sign(key, hashes.SHA256())
+    )
+    return cert.public_bytes(serialization.Encoding.PEM).decode()
+
+
+def serial_number_of(pem: str) -> str:
+    """Return the serial number of a PEM certificate as the ssl module reports it."""
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.load_verify_locations(cadata=pem)
+    return ctx.get_ca_certs()[0]["serialNumber"]
+
+
+class TestLoadCaIntoHassSslContexts:
+    """Test cases for load_ca_into_hass_ssl_contexts function."""
+
+    def test_load_ca_into_hass_ssl_contexts_trusts_ca_in_every_cached_context(self, tmp_path):
+        """Test the CA becomes trusted by every SSL context Home Assistant cached at startup."""
+        # Arrange
+        pem = generate_ca_pem()
+        ca_path = tmp_path / "test_ca.crt"
+        ca_path.write_text(pem)
+        serial_number = serial_number_of(pem)
+        contexts = [
+            client_context(ssl_cipher_list, alpn_protocols)
+            for ssl_cipher_list in SSLCipherList
+            for alpn_protocols in (SSL_ALPN_NONE, SSL_ALPN_HTTP11, SSL_ALPN_HTTP11_HTTP2)
+        ]
+        for context in contexts:
+            assert serial_number not in [cert.get("serialNumber") for cert in context.get_ca_certs()]
+
+        # Act
+        load_ca_into_hass_ssl_contexts(ca_path)
+
+        # Assert
+        for context in contexts:
+            assert serial_number in [cert.get("serialNumber") for cert in context.get_ca_certs()]
+
+    def test_load_ca_into_hass_ssl_contexts_ca_already_trusted(self, tmp_path):
+        """Test loading a CA the contexts already trust neither fails nor duplicates it."""
+        # Arrange
+        pem = generate_ca_pem()
+        ca_path = tmp_path / "test_ca.crt"
+        ca_path.write_text(pem)
+        serial_number = serial_number_of(pem)
+        load_ca_into_hass_ssl_contexts(ca_path)
+
+        # Act
+        load_ca_into_hass_ssl_contexts(ca_path)
+
+        # Assert
+        serials = [cert.get("serialNumber") for cert in get_default_context().get_ca_certs()]
+        assert serials.count(serial_number) == 1
+
+    @patch("custom_components.additional_ca.utils.SSL_ALPN_PROTOCOLS", None)
+    @patch("custom_components.additional_ca.utils.client_context")
+    def test_load_ca_into_hass_ssl_contexts_without_alpn_variants(self, mock_client_context, tmp_path):
+        """Test Home Assistant versions that cache one SSL context per cipher list."""
+        # Arrange
+        ca_path = tmp_path / "test_ca.crt"
+
+        # Act
+        load_ca_into_hass_ssl_contexts(ca_path)
+
+        # Assert
+        assert mock_client_context.call_args_list == [call(c) for c in SSLCipherList]
+        mock_client_context.return_value.load_verify_locations.assert_called_with(ca_path)
+        assert mock_client_context.return_value.load_verify_locations.call_count == len(SSLCipherList)
+
+    def test_load_ca_into_hass_ssl_contexts_invalid_cert(self, tmp_path):
+        """Test a file that is not a certificate raises SSLError."""
+        # Arrange
+        ca_path = tmp_path / "invalid_ca.crt"
+        ca_path.write_text("-----BEGIN CERTIFICATE-----\nnot a certificate\n-----END CERTIFICATE-----\n")
+
+        # Act & Assert
+        with pytest.raises(ssl.SSLError):
+            load_ca_into_hass_ssl_contexts(ca_path)
+
+    def test_load_ca_into_hass_ssl_contexts_alpn_protocols_match_home_assistant(self):
+        """Test the ALPN variants match those Home Assistant pre-builds SSL contexts for."""
+        # Act & Assert
+        assert SSL_ALPN_PROTOCOLS == hass_ssl._SSL_ALPN_PROTOCOLS
 
 
 class TestCheckHassSslContext:
@@ -849,95 +948,3 @@ class TestRemoveUnusedCerts:
             call(CA_SYSPATH)
         ]
         mock_path.assert_has_calls(expected_calls, any_order=True)
-
-
-def generate_ca_pem() -> str:
-    """Return a newly generated self-signed CA certificate in PEM format."""
-    key = ec.generate_private_key(ec.SECP256R1())
-    name = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "Additional CA unit test")])
-    cert = (
-        x509.CertificateBuilder()
-        .subject_name(name)
-        .issuer_name(name)
-        .public_key(key.public_key())
-        .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.datetime(2020, 1, 1))
-        .not_valid_after(datetime.datetime(2100, 1, 1))
-        .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
-        .sign(key, hashes.SHA256())
-    )
-    return cert.public_bytes(serialization.Encoding.PEM).decode()
-
-
-def serial_number_of(pem: str) -> str:
-    """Return the serial number of a PEM certificate as the ssl module reports it."""
-    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    ctx.load_verify_locations(cadata=pem)
-    return ctx.get_ca_certs()[0]["serialNumber"]
-
-
-class TestLoadCaIntoHassSslContexts:
-    """Test cases for load_ca_into_hass_ssl_contexts function."""
-
-    def test_load_ca_into_hass_ssl_contexts_trusts_ca_in_every_cached_context(self, tmp_path):
-        """Test the CA becomes trusted by every SSL context Home Assistant cached at startup."""
-        # Arrange
-        pem = generate_ca_pem()
-        ca_path = tmp_path / "test_ca.crt"
-        ca_path.write_text(pem)
-        serial_number = serial_number_of(pem)
-        contexts = [
-            client_context(ssl_cipher_list, alpn_protocols)
-            for ssl_cipher_list in SSLCipherList
-            for alpn_protocols in (SSL_ALPN_NONE, SSL_ALPN_HTTP11, SSL_ALPN_HTTP11_HTTP2)
-        ]
-        for context in contexts:
-            assert serial_number not in [cert.get("serialNumber") for cert in context.get_ca_certs()]
-
-        # Act
-        load_ca_into_hass_ssl_contexts(ca_path)
-
-        # Assert
-        for context in contexts:
-            assert serial_number in [cert.get("serialNumber") for cert in context.get_ca_certs()]
-
-    def test_load_ca_into_hass_ssl_contexts_ca_already_trusted(self, tmp_path):
-        """Test loading a CA the contexts already trust neither fails nor duplicates it."""
-        # Arrange
-        pem = generate_ca_pem()
-        ca_path = tmp_path / "test_ca.crt"
-        ca_path.write_text(pem)
-        serial_number = serial_number_of(pem)
-        load_ca_into_hass_ssl_contexts(ca_path)
-
-        # Act
-        load_ca_into_hass_ssl_contexts(ca_path)
-
-        # Assert
-        serials = [cert.get("serialNumber") for cert in get_default_context().get_ca_certs()]
-        assert serials.count(serial_number) == 1
-
-    @patch("custom_components.additional_ca.utils.SSL_ALPN_PROTOCOLS", None)
-    @patch("custom_components.additional_ca.utils.client_context")
-    def test_load_ca_into_hass_ssl_contexts_without_alpn_variants(self, mock_client_context, tmp_path):
-        """Test Home Assistant versions that cache one SSL context per cipher list."""
-        # Arrange
-        ca_path = tmp_path / "test_ca.crt"
-
-        # Act
-        load_ca_into_hass_ssl_contexts(ca_path)
-
-        # Assert
-        assert mock_client_context.call_args_list == [call(c) for c in SSLCipherList]
-        mock_client_context.return_value.load_verify_locations.assert_called_with(ca_path)
-        assert mock_client_context.return_value.load_verify_locations.call_count == len(SSLCipherList)
-
-    def test_load_ca_into_hass_ssl_contexts_invalid_cert(self, tmp_path):
-        """Test a file that is not a certificate raises SSLError."""
-        # Arrange
-        ca_path = tmp_path / "invalid_ca.crt"
-        ca_path.write_text("-----BEGIN CERTIFICATE-----\nnot a certificate\n-----END CERTIFICATE-----\n")
-
-        # Act & Assert
-        with pytest.raises(ssl.SSLError):
-            load_ca_into_hass_ssl_contexts(ca_path)
