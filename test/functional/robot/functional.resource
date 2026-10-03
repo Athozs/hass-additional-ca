@@ -18,7 +18,7 @@ ${HASS_TOKEN} =  to_be_overridden
 Normal Suite Setup
     OperatingSystem.Copy File    test/functional/files/configuration_test_cases.yaml    test/functional/files/config/configuration.yaml
     Start HomeAssistant container
-    # HomeAssistant needs to be restarted to take new CAs into account
+    # restart once so these tests also cover a boot where the CAs are already in the system store
     Attempt to restart HomeAssistant
 
 
