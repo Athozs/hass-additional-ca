@@ -5,4 +5,4 @@ robotframework
 robotframework-requests
 
 homeassistant
-aiofiles==24.1.0
+aiofiles>=25.1.0
