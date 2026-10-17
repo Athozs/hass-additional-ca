@@ -15,14 +15,64 @@ from homeassistant.util.ssl import client_context
 
 from .const import (
     CA_SYSPATH,
+    CONF_ENABLED,
+    CONF_FILE,
+    CONF_SOURCE,
     DOMAIN,
+    FORCE_ADDITIONAL_CA,
     NEEDS_RESTART_ISSUE_ID,
+    SOURCE_UI,
+    SOURCE_YAML,
     UPDATE_CA_SYSCMD,
     UPDATE_CA_SYSCMD_OPTIONS,
 )
 from .exceptions import SerialNumberException
 
 log = logging.getLogger(DOMAIN)
+
+
+def merge_yaml_cas(existing: dict[str, dict], yaml_conf: dict[str, str]) -> dict[str, dict]:
+    """Merge the CAs declared in configuration.yaml into the CAs stored in the config entry.
+
+    YAML is the source of truth for CAs coming from YAML: they are added, updated or
+    dropped to match it, but their enabled/disabled state set from the UI is preserved.
+    CAs added from the UI are left untouched, unless YAML declares the same name.
+
+    :param existing: CAs stored in the config entry like {'name': {'file': ..., 'enabled': ..., 'source': ...}}
+    :type existing: dict[str, dict]
+    :param yaml_conf: content of the 'additional_ca' key in configuration.yaml like {'name': 'file'}
+    :type yaml_conf: dict[str, str]
+    :return: the merged CAs
+    :rtype: dict[str, dict]
+    """
+
+    merged = {name: dict(ca) for name, ca in existing.items() if ca.get(CONF_SOURCE) == SOURCE_UI}
+    for name, filename in yaml_conf.items():
+        # Ignore deprecated option 'force_additional_ca' (boolean) from config
+        if name == FORCE_ADDITIONAL_CA:
+            continue
+        merged[name] = {
+            CONF_FILE: str(filename),
+            CONF_ENABLED: existing.get(name, {}).get(CONF_ENABLED, True),
+            CONF_SOURCE: SOURCE_YAML,
+        }
+    return merged
+
+
+def has_system_certs() -> bool:
+    """Tell whether the system CA path exists and contains at least one file."""
+
+    ca_dir = Path(CA_SYSPATH)
+    return ca_dir.is_dir() and any(f.is_file() for f in ca_dir.iterdir())
+
+
+def clear_restart_issues(hass: HomeAssistant) -> None:
+    """Delete all 'needs restart' repair issues, they are created again if still relevant."""
+
+    registry = ir.async_get(hass)
+    for domain, issue_id in list(registry.issues):
+        if domain == DOMAIN and issue_id.endswith(NEEDS_RESTART_ISSUE_ID):
+            ir.async_delete_issue(hass, domain, issue_id)
 
 
 def remove_additional_ca(ca_filename: str) -> None:

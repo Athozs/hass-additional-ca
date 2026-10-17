@@ -1,4 +1,56 @@
 {
+  "config": {
+    "step": {
+      "user": {
+        "title": "Additional CA",
+        "description": "Set up Additional CA to manage additional certificate authorities from the UI. Certificate authorities declared in configuration.yaml are imported automatically."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Additional CA is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Additional certificate authorities",
+        "description": "{cas}\n\nRemoving or disabling a certificate authority is fully applied after Home Assistant is restarted.",
+        "menu_options": {
+          "add": "Add a certificate authority",
+          "toggle": "Enable or disable certificate authorities",
+          "delete": "Delete certificate authorities"
+        }
+      },
+      "add": {
+        "title": "Add a certificate authority",
+        "description": "Upload a certificate authority file in PEM format.",
+        "data": {
+          "name": "Name",
+          "certificate": "Certificate file"
+        }
+      },
+      "toggle": {
+        "title": "Enable or disable certificate authorities",
+        "description": "Only the checked certificate authorities are enabled.",
+        "data": {
+          "enabled": "Enabled certificate authorities"
+        }
+      },
+      "delete": {
+        "title": "Delete certificate authorities",
+        "description": "The selected certificate authorities and their files are deleted. Certificate authorities declared in configuration.yaml must be removed from configuration.yaml.",
+        "data": {
+          "delete": "Certificate authorities to delete"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "The name must contain letters or digits.",
+      "already_exists": "A certificate authority with this name already exists.",
+      "invalid_certificate": "The file is not a valid PEM certificate.",
+      "cannot_write": "The certificate file could not be saved."
+    }
+  },
   "issues": {
     "needs_restart": {
       "title": "Home Assistant needs to be restarted",
