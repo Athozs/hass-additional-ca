@@ -71,6 +71,8 @@ __Table of contents__
     - [2.2. HAOS - Home Assistant Operating System](#22-haos---home-assistant-operating-system)
     - [2.3. Core](#23-core)
   - [3. CONFIGURATION](#3-configuration)
+    - [3.1. From the UI](#31-from-the-ui)
+    - [3.2. From `configuration.yaml`](#32-from-configurationyaml)
   - [4. UPGRADE](#4-upgrade)
     - [4.1. Home Assistant](#41-home-assistant)
     - [4.2. Additional CA](#42-additional-ca)
@@ -207,9 +209,23 @@ If you're running Home Assistant Core (as a Python package) directly on the host
 
 ## 3. CONFIGURATION
 
-For now, _Additional CA_ cannot be configured from the UI dashboard. This may be possible in a future release.
+The _Additional CA_ integration can be configured from the UI (section 3.1) or from `configuration.yaml` (section 3.2). Both can be used together.
 
-To configure the _Additional CA_ integration, follow these steps:
+### 3.1. From the UI
+
+1. Go to _Settings_ -> _Devices & services_ -> _Add integration_ -> _Additional CA_ (this is done automatically if `additional_ca` is declared in `configuration.yaml`).
+2. On the _Additional CA_ integration, click _Configure_. You can then:
+   * __Add__ a certificate authority: give it a name and upload a PEM file (`.crt`, `.pem`, ...). The file is stored in `config/additional_ca/ui/`.
+   * __Enable or disable__ certificate authorities: a disabled CA is kept in the list but removed from the system CA trust store.
+   * __Delete__ certificate authorities added from the UI (their file is deleted too).
+
+The changes are applied immediately. Removing or disabling a CA is fully effective in Home Assistant after a restart.
+
+CAs declared in `configuration.yaml` appear in the same list, marked as coming from `configuration.yaml`. They can be enabled or disabled from the UI (the state is kept across restarts), but to delete them remove them from `configuration.yaml`: they are dropped from the list at the next restart.
+
+### 3.2. From `configuration.yaml`
+
+Existing YAML configurations keep working without any change. To configure the _Additional CA_ integration with YAML, follow these steps:
 
 1. CA files must be in PEM format (often with a `.crt` or `.pem` extension). You can check the content with a text editor. Here is an example of a certificate file (the following is a fake):
 
@@ -315,7 +331,7 @@ additional_ca:
 >
 > After upgrading Home Assistant to a new version, you need to restart Home Assistant to load your certificates again.
 
-5. Check the logs. Look for the pattern `additional_ca` in the traces (there is no UI for _Additional CA_).
+5. Check the logs. Look for the pattern `additional_ca` in the traces.
 
 
 ## 4. UPGRADE
@@ -427,7 +443,9 @@ You should see an HTTP code 200 to confirm success.
 
 ## 7. HOW TO REMOVE A PRIVATE CA?
 
-To remove your CA: remove or comment out the CA entry under the `additional_ca` domain key in `configuration.yaml`:
+If the CA was added from the UI: click _Configure_ on the _Additional CA_ integration, then _Delete certificate authorities_. To keep the CA but stop trusting it, use _Enable or disable certificate authorities_ instead.
+
+If the CA is declared in `configuration.yaml`: remove or comment out the CA entry under the `additional_ca` domain key in `configuration.yaml`:
 
 ```yaml
 # configuration.yaml
