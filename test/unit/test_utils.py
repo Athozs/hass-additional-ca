@@ -646,9 +646,10 @@ class TestRemoveUnusedCerts:
         mock_path.side_effect = path_side_effect
 
         # Act
-        await remove_unused_certs(hass, ca_files)
+        removed = await remove_unused_certs(hass, ca_files)
 
         # Assert
+        assert removed is True
         # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
         expected_calls = [
             call("ca1.crt"),
@@ -697,9 +698,10 @@ class TestRemoveUnusedCerts:
         mock_path.side_effect = path_side_effect
 
         # Act
-        await remove_unused_certs(hass, ca_files)
+        removed = await remove_unused_certs(hass, ca_files)
 
         # Assert
+        assert removed is False
         # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
         expected_calls = [
             call("ca1.crt"),
@@ -730,9 +732,10 @@ class TestRemoveUnusedCerts:
         mock_path.return_value = mock_ca_syspath
 
         # Act
-        await remove_unused_certs(hass, ca_files)
+        removed = await remove_unused_certs(hass, ca_files)
 
         # Assert
+        assert removed is True
         unused_file.unlink.assert_called_once()
         mock_log.warning.assert_called_once_with(
             "Certificate file unused_ca.crt was already removed."
@@ -828,9 +831,10 @@ class TestRemoveUnusedCerts:
         mock_path.side_effect = path_side_effect
 
         # Act
-        await remove_unused_certs(hass, ca_files)
+        removed = await remove_unused_certs(hass, ca_files)
 
         # Assert
+        assert removed is False
         # Path is called multiple times: once for each ca_file value (to get .name) and once for CA_SYSPATH
         expected_calls = [
             call("ca1.crt"),

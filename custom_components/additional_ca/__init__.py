@@ -95,16 +95,17 @@ async def update_ca_certificates(hass: HomeAssistant, config: ConfigType) -> dic
     :rtype: dict[str, str]
     """
 
-    conf = config.get(DOMAIN)
-    if not conf:
-        return {}
+    # an empty or missing config must still clean up previously added CAs
+    conf = config.get(DOMAIN) or {}
 
     config_path = Path(hass.config.path(CONFIG_SUBDIR))
 
     # Ignore deprecated option 'force_additional_ca' (boolean) from config
     conf.pop(FORCE_ADDITIONAL_CA, None)
 
-    await remove_unused_certs(hass, conf)
+    if await remove_unused_certs(hass, conf):
+        # rebuild the system CA bundle even if no CA is copied below
+        update_system_ca()
 
     ca_files_dict = {}
     for ca_key, ca_value in conf.items():

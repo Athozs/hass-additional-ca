@@ -7,7 +7,6 @@ logger:
 additional_ca:
   simple_ca: simple-https-server.pem
   rapidssl_ca: rapidssl/RapidSSLTLSRSACAG1.crt.pem
-  hon_ca: hon_cert.crt
   my_ca_1_missing: dummy.crt
   my_ca_2_invalid_cert: invalid-ca.crt
   my_ca_3_self_signed_no_common_name: self_signed.crt

@@ -1,0 +1,14 @@
+
+default_config:
+
+logger:
+  default: info
+
+additional_ca: {}
+
+rest_command:
+  additional_ca_test:
+    url: "https://simple-https-server:4433"
+    method: get
+    verify_ssl: true
+    timeout: 30

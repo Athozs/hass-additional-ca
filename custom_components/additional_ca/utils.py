@@ -40,21 +40,25 @@ def remove_additional_ca(ca_filename: str) -> None:
         raise
 
 
-async def remove_unused_certs(hass: HomeAssistant, config: dict) -> None:
+async def remove_unused_certs(hass: HomeAssistant, config: dict) -> bool:
     """Remove unused certificates from CA_SYSPATH
 
     :param hass: hass object from HomeAssistant core
     :type hass: HomeAssistant
     :param config: additional_ca config
     :type config: dict
+    :return: True if at least one unused certificate was found
+    :rtype: bool
     """
 
     conf_ca_list = [f"{k}_{Path(v).name}" for k, v in config.items()]
     system_ca_list = [f for f in await hass.async_add_executor_job(Path(CA_SYSPATH).iterdir) if f.is_file()]
 
+    removed = False
     for cert in system_ca_list:
         if cert.name not in conf_ca_list:
             log.info(f"Removing unused certificate: {cert.name}")
+            removed = True
             try:
                 cert.unlink()
             except FileNotFoundError:
@@ -65,6 +69,8 @@ async def remove_unused_certs(hass: HomeAssistant, config: dict) -> None:
             except Exception as err:
                 log.error(f"Error removing unused certificate file {cert.name}: {str(err)}")
                 raise
+
+    return removed
 
 
 async def copy_ca_to_system(hass: HomeAssistant, ca_name: str, ca_src_path: Path) -> str:
@@ -96,6 +102,7 @@ def update_system_ca() -> None:
     :raises Exception: if command update-ca-certificates returns an error
     """
 
+    log.debug("Updating system CA")
     cmd = [UPDATE_CA_SYSCMD, UPDATE_CA_SYSCMD_OPTIONS]
     try:
         # status = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=True)

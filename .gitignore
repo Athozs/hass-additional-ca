@@ -222,5 +222,6 @@ Temporary Items
 
 # Robot Framework
 log.html
+robot_log.html
 output.xml
 stdout*.txt
